@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - Car Yard</title>
+</head>
+<body>
+  <h2>Admin Panel - Approve or Reschedule</h2>
+  <div id="requests"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    const requestsDiv = document.getElementById("requests");
+    db.collection("appointments").onSnapshot(snapshot => {
+      requestsDiv.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <p><strong>Model:</strong> ${data.model} | <strong>VIN:</strong> ${data.vin} | <strong>Date:</strong> ${data.date}</p>
+          <p>Status: ${data.status}</p>
+          <button onclick="updateStatus('${doc.id}', 'approved')">Approve</button>
+          <button onclick="updateStatus('${doc.id}', 'reschedule')">Reschedule</button>
+          <button onclick="updateStatus('${doc.id}', 'rejected')">Reject</button>
+          <hr>
+        `;
+        requestsDiv.appendChild(div);
+      });
+    });
+
+    function updateStatus(id, status) {
+      db.collection("appointments").doc(id).update({ status });
+    }
+  </script>
+</body>
+</html>
