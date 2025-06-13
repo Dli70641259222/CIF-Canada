@@ -6,32 +6,35 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
   <style>
     body {
-      font-family: Calibri, sans-serif;
-      margin: 20px;
-    }
-    h2 {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f7f9fb;
+      margin: 40px;
       color: #333;
     }
-    #upload {
+    h2 {
+      color: #222;
+    }
+    input[type="file"] {
+      padding: 8px;
       margin-top: 10px;
     }
     table {
-      border-collapse: collapse;
       width: 100%;
+      border-collapse: collapse;
       margin-top: 20px;
-      table-layout: fixed;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     th, td {
-      border: 1px solid #c6c6c6;
-      padding: 8px;
+      border: 1px solid #e0e0e0;
+      padding: 10px;
       text-align: left;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      vertical-align: top;
+      font-size: 14px;
     }
     th {
-      background-color: #eaeaea;
-      font-weight: bold;
+      background-color: #f1f3f4;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -45,7 +48,7 @@
     const uploadInput = document.getElementById('upload');
     const outputDiv = document.getElementById('output');
 
-    // Load from localStorage on refresh
+    // Load saved table on refresh
     const savedHTML = localStorage.getItem('excelTable');
     if (savedHTML) {
       outputDiv.innerHTML = savedHTML;
@@ -65,7 +68,7 @@
         const html = XLSX.utils.sheet_to_html(worksheet);
 
         outputDiv.innerHTML = html;
-        localStorage.setItem('excelTable', html); // Save to localStorage
+        localStorage.setItem('excelTable', html);
       };
       reader.readAsArrayBuffer(file);
     });
