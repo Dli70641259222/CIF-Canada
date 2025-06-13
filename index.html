@@ -2,13 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Excel Viewer</title>
+  <title>Excel Viewer with Save</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
+    body {
+      font-family: Calibri, sans-serif;
+      margin: 20px;
+    }
+    h2 {
+      color: #333;
+    }
+    #upload {
+      margin-top: 10px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #c6c6c6;
+      padding: 8px;
+      text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    th {
+      background-color: #eaeaea;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -18,21 +42,31 @@
   <div id="output"></div>
 
   <script>
-    document.getElementById('upload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+    const uploadInput = document.getElementById('upload');
+    const outputDiv = document.getElementById('output');
 
+    // Load from localStorage on refresh
+    const savedHTML = localStorage.getItem('excelTable');
+    if (savedHTML) {
+      outputDiv.innerHTML = savedHTML;
+    }
+
+    uploadInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
       reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
 
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
         const html = XLSX.utils.sheet_to_html(worksheet);
-        
-        document.getElementById('output').innerHTML = html;
-      };
 
+        outputDiv.innerHTML = html;
+        localStorage.setItem('excelTable', html); // Save to localStorage
+      };
       reader.readAsArrayBuffer(file);
     });
   </script>
