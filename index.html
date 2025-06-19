@@ -1,115 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bill of Lading Comparison</title>
+  <meta charset="UTF-8">
+  <title>Bill of Lading Comparator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f8f8f8;
+      font-family: sans-serif;
+      padding: 20px;
     }
-    h1 {
-      text-align: center;
+    h1 { text-align: center; }
+    .upload-area {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    input[type="file"] {
+      margin: 10px 0;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-      background: #fff;
+      margin-top: 30px;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ccc;
-      text-align: left;
-      vertical-align: top;
+      padding: 10px;
     }
-    th {
-      background: #f0f0f0;
-    }
-    .match {
-      background-color: #e6ffed;
-    }
-    .diff {
-      background-color: #ffe6e6;
+    th { background: #f0f0f0; }
+    .match { background-color: #e6ffe6; }
+    .diff { background-color: #ffe6e6; }
+    #compareBtn {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <h1>Bill of Lading Comparison</h1>
 
-  <table id="comparison-table">
+  <h1>Bill of Lading PDF Comparator</h1>
+
+  <div class="upload-area">
+    <div>
+      <h3>Upload File 1</h3>
+      <input type="file" id="file1" accept=".pdf">
+    </div>
+    <div>
+      <h3>Upload File 2</h3>
+      <input type="file" id="file2" accept=".pdf">
+    </div>
+  </div>
+
+  <button id="compareBtn">Compare Files</button>
+
+  <table id="resultTable" style="display:none">
     <thead>
-      <tr>
-        <th>Field</th>
-        <th>File 1</th>
-        <th>File 2</th>
-      </tr>
+      <tr><th>Field</th><th>File 1</th><th>File 2</th></tr>
     </thead>
-    <tbody>
-      <!-- Rows will be inserted here -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
   <script>
-    // Extracted values from the PDFs (manually extracted from your uploaded files)
-    const file1 = {
-      "Shipper": "9391-6526 QUEBEC INC",
-      "Consignee": "STE WHITE LINE CO",
-      "Notify Party": "Same as Consignee",
-      "Vessel": "MOMBASA EXPRESS 08E24",
-      "Port of Loading": "Montreal, QC",
-      "Port of Discharge": "Cotonou",
-      "VINs": [
-        "4JGDA5GB1JB147660",
-        "5TDDZRFH2HS362252",
-        "5TDDZRFHXJS492186"
-      ],
-      "CERS": "XN2622202506134436177",
-      "ECTN": "BJ250462F1",
-      "Weight": "6254.000 KGM",
-      "Seal": "040531"
-    };
+    let file1Text = '', file2Text = '';
 
-    const file2 = {
-      "Shipper": "9391-6526 QUEBEC INC",
-      "Consignee": "STE WHITE LINE CO",
-      "Notify Party": "Same as Consignee",
-      "Vessel": "MOMBASA EXPRESS 08E24",
-      "Port of Loading": "Montreal",
-      "Port of Discharge": "Cotonou",
-      "VINs": [
-        "4JGDA5GB1JB147660",
-        "5TDDZRFH2HS362252",
-        "5TDDZRFHXJS492186"
-      ],
-      "CERS": "XN2622202506134436177",
-      "ECTN": "BJ250462F1",
-      "Weight": "6254.73 Kg",
-      "Seal": "040531"
-    };
+    async function extractPDFText(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-    const tableBody = document.querySelector('#comparison-table tbody');
-
-    function addRow(field, value1, value2) {
-      const row = document.createElement('tr');
-      const v1 = Array.isArray(value1) ? value1.join(", ") : value1;
-      const v2 = Array.isArray(value2) ? value2.join(", ") : value2;
-
-      const className = v1 === v2 ? 'match' : 'diff';
-
-      row.innerHTML = `
-        <td>${field}</td>
-        <td class="${className}">${v1}</td>
-        <td class="${className}">${v2}</td>
-      `;
-      tableBody.appendChild(row);
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const strings = content.items.map(item => item.str);
+        text += strings.join(' ') + '\n';
+      }
+      return text;
     }
 
-    for (const field in file1) {
-      addRow(field, file1[field], file2[field] || '');
+    function extractFields(text) {
+      const fields = {};
+      const patterns = {
+        'Shipper': /(\d{4}-\d{4} QUEBEC INC[\s\S]+?)\s+(STE|COTONOU|Same)/,
+        'Consignee': /(STE WHITE LINE CO[\s\S]+?)\s+(SAME|EMAIL|COTONOU)/i,
+        'Notify Party': /SAME AS CONSIGNEE/i,
+        'Vessel': /MOMBASA EXPRESS\s+\w+/i,
+        'VINs': /(VIN\s*#.*?)(?=\s+\w{3,}|$)/g,
+        'CERS': /CERS[\s#:]*([A-Z0-9]+)/i,
+        'ECTN': /ECTN[\s#:]*([A-Z0-9]+)/i,
+        'Weight': /(Weight|Gross Weight)[^:\n]*[:\s]+([\d,.]+\s*(Kg|KGM))/i,
+        'Seal': /SEAL[:\s]*([A-Z0-9]+)/i
+      };
+
+      for (const key in patterns) {
+        const regex = patterns[key];
+        if (regex instanceof RegExp) {
+          if (key === 'VINs') {
+            const vins = [...text.matchAll(regex)].map(m => m[1].trim());
+            fields[key] = vins;
+          } else {
+            const match = text.match(regex);
+            if (match) fields[key] = match[1].trim();
+          }
+        }
+      }
+      return fields;
     }
+
+    function compareFields(f1, f2) {
+      const keys = new Set([...Object.keys(f1), ...Object.keys(f2)]);
+      const table = document.querySelector("#resultTable");
+      const tbody = table.querySelector("tbody");
+      tbody.innerHTML = "";
+
+      for (const key of keys) {
+        const val1 = Array.isArray(f1[key]) ? f1[key].join(", ") : (f1[key] || '');
+        const val2 = Array.isArray(f2[key]) ? f2[key].join(", ") : (f2[key] || '');
+
+        const row = document.createElement("tr");
+        const match = val1 === val2;
+        row.innerHTML = `
+          <td>${key}</td>
+          <td class="${match ? 'match' : 'diff'}">${val1}</td>
+          <td class="${match ? 'match' : 'diff'}">${val2}</td>
+        `;
+        tbody.appendChild(row);
+      }
+      table.style.display = 'table';
+    }
+
+    document.getElementById('compareBtn').addEventListener('click', async () => {
+      const f1 = document.getElementById('file1').files[0];
+      const f2 = document.getElementById('file2').files[0];
+      if (!f1 || !f2) return alert("Please select both PDF files.");
+
+      file1Text = await extractPDFText(f1);
+      file2Text = await extractPDFText(f2);
+
+      const fields1 = extractFields(file1Text);
+      const fields2 = extractFields(file2Text);
+
+      compareFields(fields1, fields2);
+    });
   </script>
+
 </body>
 </html>
