@@ -2,214 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PDF Comparator - Drop and Compare</title>
+  <title>Compare Two PDF Files</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    #dropzone {
-      border: 3px dashed #999;
-      border-radius: 10px;
-      padding: 50px;
-      text-align: center;
-      background: #f9f9f9;
-      color: #666;
-      font-size: 18px;
-      margin-bottom: 20px;
-    }
-    #dropzone.dragover {
-      background: #e6f7ff;
-      border-color: #00aaff;
-    }
-    #compareBtn {
-      display: none;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-      display: block;
-      cursor: pointer;
-    }
-    #log {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-top: 20px;
-      font-family: monospace;
-      white-space: pre-line;
-      height: 160px;
-      overflow-y: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 30px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
+    body { font-family: sans-serif; padding: 20px; }
+    input { margin-bottom: 10px; display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; vertical-align: top; }
     th { background: #f0f0f0; }
-    .match { background-color: #e6ffe6; }
+    .same { background-color: #e6ffe6; }
     .diff { background-color: #ffe6e6; }
   </style>
 </head>
 <body>
 
-  <h1>Drop Two PDFs to Compare</h1>
-  <div id="dropzone">Drop exactly 2 PDF files here</div>
+<h2>Compare Two PDF Files</h2>
 
-  <button id="compareBtn">Compare Files</button>
+<input type="file" id="pdf1" accept="application/pdf" />
+<input type="file" id="pdf2" accept="application/pdf" />
+<button onclick="comparePDFs()">Compare</button>
 
-  <div id="log">Log:</div>
+<table id="resultTable" style="display: none;">
+  <thead>
+    <tr>
+      <th>Line #</th>
+      <th>File 1</th>
+      <th>File 2</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <table id="resultTable" style="display:none">
-    <thead>
-      <tr>
-        <th>Field</th>
-        <th>File 1</th>
-        <th>File 2</th>
-        <th>Comparison</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<script>
+  async function extractPDFText(file) {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map(item => item.str);
+      fullText += strings.join('\n') + '\n';
+    }
+    return fullText.split(/\r?\n/).map(line => line.trim()).filter(line => line);
+  }
 
-  <script>
-    let file1 = null, file2 = null;
-    let text1 = '', text2 = '';
-
-    const dropzone = document.getElementById('dropzone');
-    const compareBtn = document.getElementById('compareBtn');
-    const logDiv = document.getElementById('log');
-
-    function log(message) {
-      logDiv.textContent += `\n${message}`;
-      logDiv.scrollTop = logDiv.scrollHeight;
+  async function comparePDFs() {
+    const file1 = document.getElementById('pdf1').files[0];
+    const file2 = document.getElementById('pdf2').files[0];
+    if (!file1 || !file2) {
+      alert("Please upload both PDF files.");
+      return;
     }
 
-    dropzone.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    });
+    const lines1 = await extractPDFText(file1);
+    const lines2 = await extractPDFText(file2);
 
-    dropzone.addEventListener('dragleave', () => {
-      dropzone.classList.remove('dragover');
-    });
+    const maxLines = Math.max(lines1.length, lines2.length);
+    const tbody = document.querySelector("#resultTable tbody");
+    tbody.innerHTML = "";
 
-    dropzone.addEventListener('drop', async e => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      logDiv.textContent = "Log:"; // reset log
-
-      const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
-
-      if (files.length !== 2) {
-        alert("Drop exactly TWO PDF files.");
-        return;
-      }
-
-      [file1, file2] = files;
-      log(`✅ Files loaded:\n - ${file1.name}\n - ${file2.name}`);
-      dropzone.textContent = `Files loaded: ${file1.name} & ${file2.name}`;
-      compareBtn.style.display = 'block';
-    });
-
-    compareBtn.addEventListener('click', async () => {
-      if (!file1 || !file2) return alert("Please drop two PDF files first.");
-
-      log("\n🔄 Extracting text from PDF #1...");
-      text1 = await extractPDFText(file1);
-      log("✅ Extracted text from File 1.");
-
-      log("\n🔄 Extracting text from PDF #2...");
-      text2 = await extractPDFText(file2);
-      log("✅ Extracted text from File 2.");
-
-      log("\n🔍 Extracting key fields...");
-      const fields1 = extractFields(text1);
-      const fields2 = extractFields(text2);
-      log("✅ Fields extracted from both files.");
-
-      log("\n🔎 Comparing fields...");
-      compareFields(fields1, fields2);
-      log("✅ Comparison complete.");
-    });
-
-    async function extractPDFText(file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let text = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const strings = content.items.map(item => item.str);
-        text += strings.join(' ') + '\n';
-      }
-      return text;
+    for (let i = 0; i < maxLines; i++) {
+      const line1 = lines1[i] || "";
+      const line2 = lines2[i] || "";
+      const isSame = line1 === line2;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${i + 1}</td>
+        <td class="${isSame ? 'same' : 'diff'}">${line1}</td>
+        <td class="${isSame ? 'same' : 'diff'}">${line2}</td>
+        <td class="${isSame ? 'same' : 'diff'}">${isSame ? 'Same' : 'Different'}</td>
+      `;
+      tbody.appendChild(row);
     }
 
-    function extractFields(text) {
-      const fields = {};
-      const patterns = {
-        'Shipper': /(\d{4}-\d{4} QUEBEC INC[\s\S]+?)\s+(STE|COTONOU|Same)/,
-        'Consignee': /(STE WHITE LINE CO[\s\S]+?)\s+(SAME|EMAIL|COTONOU)/i,
-        'Notify Party': /SAME AS CONSIGNEE/i,
-        'Vessel': /MOMBASA EXPRESS\s+\w+/i,
-        'Port of Loading': /PORT OF LOADING[:\s]*([A-Z,\s]+)/i,
-        'Port of Discharge': /PORT OF DISCHARGE[:\s]*([A-Z,\s]+)/i,
-        'VINs': /(VIN\s*#.*?)(?=\s+\w{3,}|$)/g,
-        'CERS': /CERS[\s#:]*([A-Z0-9]+)/i,
-        'ECTN': /ECTN[\s#:]*([A-Z0-9]+)/i,
-        'Weight': /(Weight|Gross Weight)[^:\n]*[:\s]+([\d,.]+\s*(Kg|KGM))/i,
-        'Seal': /SEAL[:\s]*([A-Z0-9]+)/i
-      };
-
-      for (const key in patterns) {
-        const regex = patterns[key];
-        if (key === 'VINs') {
-          const vins = [...text.matchAll(regex)].map(m => m[1].trim());
-          fields[key] = vins;
-        } else {
-          const match = text.match(regex);
-          if (match) fields[key] = match[1].trim();
-        }
-      }
-
-      return fields;
-    }
-
-    function compareFields(f1, f2) {
-      const keys = new Set([...Object.keys(f1), ...Object.keys(f2)]);
-      const table = document.querySelector("#resultTable");
-      const tbody = table.querySelector("tbody");
-      tbody.innerHTML = "";
-
-      for (const key of keys) {
-        const val1 = Array.isArray(f1[key]) ? f1[key].join(", ") : (f1[key] || '');
-        const val2 = Array.isArray(f2[key]) ? f2[key].join(", ") : (f2[key] || '');
-
-        const match = val1 === val2;
-        const status = match ? 'Same' : 'Different';
-        const className = match ? 'match' : 'diff';
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${key}</td>
-          <td class="${className}">${val1}</td>
-          <td class="${className}">${val2}</td>
-          <td class="${className}">${status}</td>
-        `;
-        tbody.appendChild(row);
-      }
-
-      table.style.display = 'table';
-    }
-  </script>
+    document.getElementById("resultTable").style.display = "table";
+  }
+</script>
 
 </body>
 </html>
