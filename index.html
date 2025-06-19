@@ -2,134 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PDF Comparison Tool</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PDF Bill of Lading Comparator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    h2 { text-align: center; }
-    #dropzone {
-      border: 3px dashed #ccc;
-      padding: 40px;
-      text-align: center;
-      border-radius: 10px;
-      background: #f9f9f9;
-      color: #555;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-    th { background: #eee; }
-    .match { background: #e6ffe6; }
-    .diff { background: #ffe6e6; }
+    body { font-family: Arial; padding: 20px; background: #f7f7f7; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    td, th { padding: 8px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #eee; }
+    .match { background: #c8f7c5; }
+    .mismatch { background: #f7c5c5; }
   </style>
 </head>
 <body>
+  <h1>PDF Bill of Lading Comparator</h1>
+  <input type="file" id="pdf1" accept="application/pdf">
+  <input type="file" id="pdf2" accept="application/pdf">
+  <button onclick="comparePDFs()">Compare PDFs</button>
+  <div id="result"></div>
 
-<h2>Drop Exactly 2 PDF Files</h2>
-<div id="dropzone">Drop your 2 PDF files here</div>
-
-<table id="resultTable" style="display: none;">
-  <thead>
-    <tr><th>Field</th><th>File 1</th><th>File 2</th><th>Match?</th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<script>
-  let dropzone = document.getElementById('dropzone');
-
-  dropzone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropzone.style.background = '#e0f7fa';
-  });
-
-  dropzone.addEventListener('dragleave', () => {
-    dropzone.style.background = '#f9f9f9';
-  });
-
-  dropzone.addEventListener('drop', async e => {
-    e.preventDefault();
-    dropzone.style.background = '#f9f9f9';
-
-    const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
-    if (files.length !== 2) return alert("Please drop exactly two PDF files.");
-
-    const [text1, text2] = await Promise.all([extractPDFText(files[0]), extractPDFText(files[1])]);
-    const data1 = extractFields(text1);
-    const data2 = extractFields(text2);
-    compareFields(data1, data2);
-  });
-
-  async function extractPDFText(file) {
-    const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    let text = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      text += content.items.map(item => item.str).join(' ') + '\n';
+  <script>
+    async function extractTextFromPDF(file) {
+      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(i => i.str).join(" ") + "\n";
+      }
+      return text;
     }
-    return text;
-  }
 
-  function extractFields(text) {
-    const normalize = str => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
-    const find = (pattern) => {
-      const m = text.match(new RegExp(pattern, 'i'));
-      return m ? normalize(m[1]) : '';
-    };
-    const VINs = [...text.matchAll(/VIN[:#\s]*([A-HJ-NPR-Z0-9]{17})/gi)].map(m => m[1].toUpperCase());
-
-    return {
-      Shipper: find(/(?:Shipper|EXPORTER)[\s:]*([\s\S]*?QUEBEC INC)/),
-      Consignee: find(/STE WHITE LINE CO[\s\S]*?(?=Same|Email|COTONOU)/),
-      Destination: find(/PORT OF DISCHARGE[:\s]*([A-Z ]+)/),
-      Container: find(/CNT[:\s]*([A-Z0-9]+)/) || find(/FANU\s*([0-9]+)/),
-      Seal: find(/SEAL[:\s]*([0-9A-Z]+)/),
-      Weight: find(/(?:Gross Weight|Weight)[^\d]*([\d,.]+)/),
-      VINs: VINs.sort().join(', ')
-    };
-  }
-
-  function floatsClose(a, b, tol = 1) {
-    const f1 = parseFloat((a || '0').replace(/,/g, ''));
-    const f2 = parseFloat((b || '0').replace(/,/g, ''));
-    return Math.abs(f1 - f2) < tol;
-  }
-
-  function compareFields(d1, d2) {
-    const table = document.getElementById("resultTable");
-    const tbody = table.querySelector("tbody");
-    tbody.innerHTML = '';
-    table.style.display = 'table';
-
-    for (const key in d1) {
-      const val1 = d1[key];
-      const val2 = d2[key];
-
-      let match = false;
-      if (key === 'Weight') match = floatsClose(val1, val2);
-      else if (key === 'VINs') match = val1 === val2;
-      else match = val1 === val2;
-
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${key}</td>
-        <td class="${match ? 'match' : 'diff'}">${val1}</td>
-        <td class="${match ? 'match' : 'diff'}">${val2}</td>
-        <td class="${match ? 'match' : 'diff'}">${match ? '✅ Same' : '❌ Different'}</td>
-      `;
-      tbody.appendChild(row);
+    function extractFields(text) {
+      return {
+        shipper: text.match(/(?:SHIPPER|EXPORTER)[^\n]+([\s\S]{1,100})/)?.[1]?.trim() || '',
+        consignee: text.match(/(?:CONSIGNEE|CONSINGED TO)[^\n]+([\s\S]{1,100})/)?.[1]?.trim() || '',
+        container: text.match(/FANU[0-9]+/)?.[0] || '',
+        seal: text.match(/SEAL[: ]+([0-9]+)/i)?.[1] || '',
+        vins: [...text.matchAll(/VIN[:# ]+([A-HJ-NPR-Z0-9]{17})/gi)].map(m => m[1]),
+        weight: text.match(/(\d{4,6}\.?[\d]*)\s*K[GM]/i)?.[1] || '',
+        portLoad: text.match(/PORT OF LOADING[: ]+([A-Z,\s]+)/i)?.[1]?.trim() || '',
+        portDischarge: text.match(/PORT OF DISCHARGE[: ]+([A-Z,\s]+)/i)?.[1]?.trim() || '',
+      };
     }
-  }
-</script>
 
+    function compareFields(f1, f2) {
+      const resultTable = document.createElement('table');
+      resultTable.innerHTML = `<tr><th>Field</th><th>File 1</th><th>File 2</th><th>Match?</th></tr>`;
+      const addRow = (label, v1, v2) => {
+        const isMatch = JSON.stringify(v1) === JSON.stringify(v2);
+        resultTable.innerHTML += `<tr class="${isMatch ? 'match' : 'mismatch'}">
+          <td>${label}</td><td>${v1}</td><td>${v2}</td><td>${isMatch ? '✅' : '❌'}</td></tr>`;
+      };
+      addRow('Shipper', f1.shipper, f2.shipper);
+      addRow('Consignee', f1.consignee, f2.consignee);
+      addRow('Container Number', f1.container, f2.container);
+      addRow('Seal Number', f1.seal, f2.seal);
+      addRow('Weight', f1.weight, f2.weight);
+      addRow('Port of Loading', f1.portLoad, f2.portLoad);
+      addRow('Port of Discharge', f1.portDischarge, f2.portDischarge);
+      addRow('VINs', f1.vins.join('<br>'), f2.vins.join('<br>'));
+      return resultTable;
+    }
+
+    async function comparePDFs() {
+      const file1 = document.getElementById('pdf1').files[0];
+      const file2 = document.getElementById('pdf2').files[0];
+      if (!file1 || !file2) return alert("Please upload two PDF files.");
+      const [text1, text2] = await Promise.all([
+        extractTextFromPDF(file1),
+        extractTextFromPDF(file2)
+      ]);
+      const fields1 = extractFields(text1);
+      const fields2 = extractFields(text2);
+      const result = compareFields(fields1, fields2);
+      document.getElementById('result').innerHTML = '';
+      document.getElementById('result').appendChild(result);
+    }
+  </script>
 </body>
 </html>
