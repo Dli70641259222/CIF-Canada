@@ -1,84 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Compare Two PDF Files</title>
+  <meta charset="UTF-8" />
+  <title>Compare 2 Bills of Lading</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
-    input { margin-bottom: 10px; display: block; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; vertical-align: top; }
-    th { background: #f0f0f0; }
-    .same { background-color: #e6ffe6; }
-    .diff { background-color: #ffe6e6; }
+    h1 { text-align: center; }
+    #dropzone {
+      border: 3px dashed #999;
+      padding: 40px;
+      text-align: center;
+      background: #f9f9f9;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      color: #555;
+    }
+    #dropzone.dragover {
+      background: #e6f7ff;
+      border-color: #00aaff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      vertical-align: top;
+    }
+    th { background: #eee; }
+    .match { background: #e6ffe6; }
+    .diff { background: #ffe6e6; }
   </style>
 </head>
 <body>
 
-<h2>Compare Two PDF Files</h2>
-
-<input type="file" id="pdf1" accept="application/pdf" />
-<input type="file" id="pdf2" accept="application/pdf" />
-<button onclick="comparePDFs()">Compare</button>
+<h1>Drop Two PDF Files to Compare</h1>
+<div id="dropzone">Drop your two PDF files here</div>
 
 <table id="resultTable" style="display: none;">
   <thead>
     <tr>
-      <th>Line #</th>
+      <th>Field</th>
       <th>File 1</th>
       <th>File 2</th>
-      <th>Status</th>
+      <th>Match?</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
 <script>
-  async function extractPDFText(file) {
-    const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const strings = content.items.map(item => item.str);
-      fullText += strings.join('\n') + '\n';
-    }
-    return fullText.split(/\r?\n/).map(line => line.trim()).filter(line => line);
+let file1, file2;
+
+document.getElementById('dropzone').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.currentTarget.classList.add('dragover');
+});
+
+document.getElementById('dropzone').addEventListener('dragleave', e => {
+  e.currentTarget.classList.remove('dragover');
+});
+
+document.getElementById('dropzone').addEventListener('drop', async e => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+
+  const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+  if (files.length !== 2) return alert("Drop exactly two PDF files.");
+  [file1, file2] = files;
+
+  const [text1, text2] = await Promise.all([extractPDFText(file1), extractPDFText(file2)]);
+  const data1 = extractFields(text1);
+  const data2 = extractFields(text2);
+
+  compareData(data1, data2);
+});
+
+async function extractPDFText(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+function extractFields(text) {
+  const clean = txt => txt?.trim().replace(/\s+/g, ' ') || '';
+  const find = (pattern, flags = 'i') => {
+    const match = text.match(new RegExp(pattern, flags));
+    return match ? clean(match[1]) : '';
+  };
+  return {
+    Shipper: find(/(?:Shipper|EXPORTER)[\s:]*([\s\S]*?QUEBEC INC)/),
+    Consignee: find(/STE WHITE LINE CO[\s\S]*?(?=Same|Email|COTONOU)/),
+    Destination: find(/PORT OF DISCHARGE[:\s]*([A-Z ]+)/),
+    Container: find(/CNT[:\s]*([A-Z0-9]+)/) || find(/FANU\s*([0-9]+)/),
+    Seal: find(/SEAL[:\s]*([0-9A-Z]+)/),
+    Weight: find(/(?:Gross Weight|Weight)[^\d]*([\d,.]+\s?(Kg|KGM))/i),
+    VINs: (text.match(/VIN[:#\s]*([A-HJ-NPR-Z0-9]{17})/gi) || []).map(v => v.toUpperCase().replace(/[^A-Z0-9]/gi, '')).join(', ')
+  };
+}
+
+function compareData(d1, d2) {
+  const table = document.getElementById('resultTable');
+  const tbody = table.querySelector('tbody');
+  tbody.innerHTML = '';
+
+  for (const key of Object.keys(d1)) {
+    const val1 = d1[key];
+    const val2 = d2[key];
+    const isMatch = val1 === val2;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${key}</td>
+      <td class="${isMatch ? 'match' : 'diff'}">${val1}</td>
+      <td class="${isMatch ? 'match' : 'diff'}">${val2}</td>
+      <td class="${isMatch ? 'match' : 'diff'}">${isMatch ? '✅ Same' : '❌ Different'}</td>
+    `;
+    tbody.appendChild(row);
   }
 
-  async function comparePDFs() {
-    const file1 = document.getElementById('pdf1').files[0];
-    const file2 = document.getElementById('pdf2').files[0];
-    if (!file1 || !file2) {
-      alert("Please upload both PDF files.");
-      return;
-    }
-
-    const lines1 = await extractPDFText(file1);
-    const lines2 = await extractPDFText(file2);
-
-    const maxLines = Math.max(lines1.length, lines2.length);
-    const tbody = document.querySelector("#resultTable tbody");
-    tbody.innerHTML = "";
-
-    for (let i = 0; i < maxLines; i++) {
-      const line1 = lines1[i] || "";
-      const line2 = lines2[i] || "";
-      const isSame = line1 === line2;
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${i + 1}</td>
-        <td class="${isSame ? 'same' : 'diff'}">${line1}</td>
-        <td class="${isSame ? 'same' : 'diff'}">${line2}</td>
-        <td class="${isSame ? 'same' : 'diff'}">${isSame ? 'Same' : 'Different'}</td>
-      `;
-      tbody.appendChild(row);
-    }
-
-    document.getElementById("resultTable").style.display = "table";
-  }
+  table.style.display = 'table';
+}
 </script>
 
 </body>
