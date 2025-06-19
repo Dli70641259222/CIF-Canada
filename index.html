@@ -2,52 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Compare 2 Bills of Lading</title>
+  <title>Smart Bill of Lading Comparison</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
-    h1 { text-align: center; }
     #dropzone {
-      border: 3px dashed #999;
+      border: 3px dashed #ccc;
       padding: 40px;
       text-align: center;
-      background: #f9f9f9;
       margin-bottom: 20px;
       border-radius: 10px;
-      color: #555;
-    }
-    #dropzone.dragover {
-      background: #e6f7ff;
-      border-color: #00aaff;
+      background: #f9f9f9;
+      color: #333;
     }
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 30px;
+      width: 100%; border-collapse: collapse; margin-top: 20px;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ccc;
+      padding: 10px;
       vertical-align: top;
     }
-    th { background: #eee; }
+    th { background: #f0f0f0; }
     .match { background: #e6ffe6; }
     .diff { background: #ffe6e6; }
   </style>
 </head>
 <body>
 
-<h1>Drop Two PDF Files to Compare</h1>
-<div id="dropzone">Drop your two PDF files here</div>
+<h2>Drop 2 PDFs to Compare Bills of Lading</h2>
+<div id="dropzone">Drop your 2 PDF files here</div>
 
-<table id="resultTable" style="display: none;">
+<table id="resultTable" style="display:none">
   <thead>
-    <tr>
-      <th>Field</th>
-      <th>File 1</th>
-      <th>File 2</th>
-      <th>Match?</th>
-    </tr>
+    <tr><th>Field</th><th>File 1</th><th>File 2</th><th>Match?</th></tr>
   </thead>
   <tbody></tbody>
 </table>
@@ -56,73 +44,91 @@
 let file1, file2;
 
 document.getElementById('dropzone').addEventListener('dragover', e => {
-  e.preventDefault();
-  e.currentTarget.classList.add('dragover');
+  e.preventDefault(); e.currentTarget.classList.add('dragover');
 });
-
 document.getElementById('dropzone').addEventListener('dragleave', e => {
   e.currentTarget.classList.remove('dragover');
 });
-
 document.getElementById('dropzone').addEventListener('drop', async e => {
-  e.preventDefault();
-  e.currentTarget.classList.remove('dragover');
-
+  e.preventDefault(); e.currentTarget.classList.remove('dragover');
   const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
   if (files.length !== 2) return alert("Drop exactly two PDF files.");
   [file1, file2] = files;
-
   const [text1, text2] = await Promise.all([extractPDFText(file1), extractPDFText(file2)]);
   const data1 = extractFields(text1);
   const data2 = extractFields(text2);
-
-  compareData(data1, data2);
+  compareFields(data1, data2);
 });
 
 async function extractPDFText(file) {
-  const buffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
   let text = '';
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    text += content.items.map(item => item.str).join(' ') + '\n';
+    text += content.items.map(i => i.str).join(' ') + '\n';
   }
   return text;
 }
 
 function extractFields(text) {
-  const clean = txt => txt?.trim().replace(/\s+/g, ' ') || '';
-  const find = (pattern, flags = 'i') => {
-    const match = text.match(new RegExp(pattern, flags));
-    return match ? clean(match[1]) : '';
+  const find = (pattern) => {
+    const m = text.match(new RegExp(pattern, 'i'));
+    return m ? m[1].trim() : '';
   };
+  const VINs = [...text.matchAll(/VIN[:#\s]*([A-HJ-NPR-Z0-9]{17})/gi)].map(m => m[1].toUpperCase());
+
   return {
     Shipper: find(/(?:Shipper|EXPORTER)[\s:]*([\s\S]*?QUEBEC INC)/),
     Consignee: find(/STE WHITE LINE CO[\s\S]*?(?=Same|Email|COTONOU)/),
     Destination: find(/PORT OF DISCHARGE[:\s]*([A-Z ]+)/),
     Container: find(/CNT[:\s]*([A-Z0-9]+)/) || find(/FANU\s*([0-9]+)/),
     Seal: find(/SEAL[:\s]*([0-9A-Z]+)/),
-    Weight: find(/(?:Gross Weight|Weight)[^\d]*([\d,.]+\s?(Kg|KGM))/i),
-    VINs: (text.match(/VIN[:#\s]*([A-HJ-NPR-Z0-9]{17})/gi) || []).map(v => v.toUpperCase().replace(/[^A-Z0-9]/gi, '')).join(', ')
+    Weight: find(/(?:Gross Weight|Weight)[^\d]*([\d,.]+)/),
+    VINs: VINs.sort().join(', ')
   };
 }
 
-function compareData(d1, d2) {
-  const table = document.getElementById('resultTable');
-  const tbody = table.querySelector('tbody');
+function normalize(s) {
+  return s.toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ,.-]/gi, '').trim();
+}
+
+function floatsAreClose(a, b, tol = 0.5) {
+  const n1 = parseFloat(a.replace(/,/g, ''));
+  const n2 = parseFloat(b.replace(/,/g, ''));
+  return Math.abs(n1 - n2) <= tol;
+}
+
+function compareText(a, b) {
+  return normalize(a) === normalize(b);
+}
+
+function compareVINs(v1, v2) {
+  return v1.split(',').sort().join(',') === v2.split(',').sort().join(',');
+}
+
+function compareFields(data1, data2) {
+  const fields = Object.keys(data1);
+  const table = document.getElementById("resultTable");
+  const tbody = table.querySelector("tbody");
   tbody.innerHTML = '';
 
-  for (const key of Object.keys(d1)) {
-    const val1 = d1[key];
-    const val2 = d2[key];
-    const isMatch = val1 === val2;
-    const row = document.createElement('tr');
+  for (const field of fields) {
+    const val1 = data1[field] || '';
+    const val2 = data2[field] || '';
+    let match = false;
+
+    if (field === 'Weight') match = floatsAreClose(val1, val2);
+    else if (field === 'VINs') match = compareVINs(val1, val2);
+    else match = compareText(val1, val2);
+
+    const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${key}</td>
-      <td class="${isMatch ? 'match' : 'diff'}">${val1}</td>
-      <td class="${isMatch ? 'match' : 'diff'}">${val2}</td>
-      <td class="${isMatch ? 'match' : 'diff'}">${isMatch ? '✅ Same' : '❌ Different'}</td>
+      <td>${field}</td>
+      <td class="${match ? 'match' : 'diff'}">${val1}</td>
+      <td class="${match ? 'match' : 'diff'}">${val2}</td>
+      <td class="${match ? 'match' : 'diff'}">${match ? '✅ Same' : '❌ Different'}</td>
     `;
     tbody.appendChild(row);
   }
@@ -133,3 +139,5 @@ function compareData(d1, d2) {
 
 </body>
 </html>
+
+
