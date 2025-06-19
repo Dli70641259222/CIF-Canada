@@ -1,78 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Excel Viewer with Save</title>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bill of Lading Comparison</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f7f9fb;
-      margin: 40px;
-      color: #333;
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f8f8f8;
     }
-    h2 {
-      color: #222;
-    }
-    input[type="file"] {
-      padding: 8px;
-      margin-top: 10px;
+    h1 {
+      text-align: center;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-      background: white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: #fff;
     }
     th, td {
-      border: 1px solid #e0e0e0;
       padding: 10px;
+      border: 1px solid #ccc;
       text-align: left;
       vertical-align: top;
-      font-size: 14px;
     }
     th {
-      background-color: #f1f3f4;
-      font-weight: 600;
+      background: #f0f0f0;
+    }
+    .match {
+      background-color: #e6ffed;
+    }
+    .diff {
+      background-color: #ffe6e6;
     }
   </style>
 </head>
 <body>
+  <h1>Bill of Lading Comparison</h1>
 
-  <h2>Upload Excel File</h2>
-  <input type="file" id="upload" accept=".xlsx, .xls" />
-  <div id="output"></div>
+  <table id="comparison-table">
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>File 1</th>
+        <th>File 2</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows will be inserted here -->
+    </tbody>
+  </table>
 
   <script>
-    const uploadInput = document.getElementById('upload');
-    const outputDiv = document.getElementById('output');
+    // Extracted values from the PDFs (manually extracted from your uploaded files)
+    const file1 = {
+      "Shipper": "9391-6526 QUEBEC INC",
+      "Consignee": "STE WHITE LINE CO",
+      "Notify Party": "Same as Consignee",
+      "Vessel": "MOMBASA EXPRESS 08E24",
+      "Port of Loading": "Montreal, QC",
+      "Port of Discharge": "Cotonou",
+      "VINs": [
+        "4JGDA5GB1JB147660",
+        "5TDDZRFH2HS362252",
+        "5TDDZRFHXJS492186"
+      ],
+      "CERS": "XN2622202506134436177",
+      "ECTN": "BJ250462F1",
+      "Weight": "6254.000 KGM",
+      "Seal": "040531"
+    };
 
-    // Load saved table on refresh
-    const savedHTML = localStorage.getItem('excelTable');
-    if (savedHTML) {
-      outputDiv.innerHTML = savedHTML;
+    const file2 = {
+      "Shipper": "9391-6526 QUEBEC INC",
+      "Consignee": "STE WHITE LINE CO",
+      "Notify Party": "Same as Consignee",
+      "Vessel": "MOMBASA EXPRESS 08E24",
+      "Port of Loading": "Montreal",
+      "Port of Discharge": "Cotonou",
+      "VINs": [
+        "4JGDA5GB1JB147660",
+        "5TDDZRFH2HS362252",
+        "5TDDZRFHXJS492186"
+      ],
+      "CERS": "XN2622202506134436177",
+      "ECTN": "BJ250462F1",
+      "Weight": "6254.73 Kg",
+      "Seal": "040531"
+    };
+
+    const tableBody = document.querySelector('#comparison-table tbody');
+
+    function addRow(field, value1, value2) {
+      const row = document.createElement('tr');
+      const v1 = Array.isArray(value1) ? value1.join(", ") : value1;
+      const v2 = Array.isArray(value2) ? value2.join(", ") : value2;
+
+      const className = v1 === v2 ? 'match' : 'diff';
+
+      row.innerHTML = `
+        <td>${field}</td>
+        <td class="${className}">${v1}</td>
+        <td class="${className}">${v2}</td>
+      `;
+      tableBody.appendChild(row);
     }
 
-    uploadInput.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const html = XLSX.utils.sheet_to_html(worksheet);
-
-        outputDiv.innerHTML = html;
-        localStorage.setItem('excelTable', html);
-      };
-      reader.readAsArrayBuffer(file);
-    });
+    for (const field in file1) {
+      addRow(field, file1[field], file2[field] || '');
+    }
   </script>
-
 </body>
 </html>
