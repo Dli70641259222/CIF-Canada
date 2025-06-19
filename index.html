@@ -2,38 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Smart Bill of Lading Comparison</title>
+  <title>PDF Comparison Tool</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
+    h2 { text-align: center; }
     #dropzone {
       border: 3px dashed #ccc;
       padding: 40px;
       text-align: center;
-      margin-bottom: 20px;
       border-radius: 10px;
       background: #f9f9f9;
-      color: #333;
+      color: #555;
+      margin-bottom: 20px;
     }
     table {
-      width: 100%; border-collapse: collapse; margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 10px;
-      vertical-align: top;
     }
-    th { background: #f0f0f0; }
+    th { background: #eee; }
     .match { background: #e6ffe6; }
     .diff { background: #ffe6e6; }
   </style>
 </head>
 <body>
 
-<h2>Drop 2 PDFs to Compare Bills of Lading</h2>
+<h2>Drop Exactly 2 PDF Files</h2>
 <div id="dropzone">Drop your 2 PDF files here</div>
 
-<table id="resultTable" style="display:none">
+<table id="resultTable" style="display: none;">
   <thead>
     <tr><th>Field</th><th>File 1</th><th>File 2</th><th>Match?</th></tr>
   </thead>
@@ -41,103 +43,93 @@
 </table>
 
 <script>
-let file1, file2;
+  let dropzone = document.getElementById('dropzone');
 
-document.getElementById('dropzone').addEventListener('dragover', e => {
-  e.preventDefault(); e.currentTarget.classList.add('dragover');
-});
-document.getElementById('dropzone').addEventListener('dragleave', e => {
-  e.currentTarget.classList.remove('dragover');
-});
-document.getElementById('dropzone').addEventListener('drop', async e => {
-  e.preventDefault(); e.currentTarget.classList.remove('dragover');
-  const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
-  if (files.length !== 2) return alert("Drop exactly two PDF files.");
-  [file1, file2] = files;
-  const [text1, text2] = await Promise.all([extractPDFText(file1), extractPDFText(file2)]);
-  const data1 = extractFields(text1);
-  const data2 = extractFields(text2);
-  compareFields(data1, data2);
-});
+  dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropzone.style.background = '#e0f7fa';
+  });
 
-async function extractPDFText(file) {
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  let text = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    text += content.items.map(i => i.str).join(' ') + '\n';
-  }
-  return text;
-}
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.background = '#f9f9f9';
+  });
 
-function extractFields(text) {
-  const find = (pattern) => {
-    const m = text.match(new RegExp(pattern, 'i'));
-    return m ? m[1].trim() : '';
-  };
-  const VINs = [...text.matchAll(/VIN[:#\s]*([A-HJ-NPR-Z0-9]{17})/gi)].map(m => m[1].toUpperCase());
+  dropzone.addEventListener('drop', async e => {
+    e.preventDefault();
+    dropzone.style.background = '#f9f9f9';
 
-  return {
-    Shipper: find(/(?:Shipper|EXPORTER)[\s:]*([\s\S]*?QUEBEC INC)/),
-    Consignee: find(/STE WHITE LINE CO[\s\S]*?(?=Same|Email|COTONOU)/),
-    Destination: find(/PORT OF DISCHARGE[:\s]*([A-Z ]+)/),
-    Container: find(/CNT[:\s]*([A-Z0-9]+)/) || find(/FANU\s*([0-9]+)/),
-    Seal: find(/SEAL[:\s]*([0-9A-Z]+)/),
-    Weight: find(/(?:Gross Weight|Weight)[^\d]*([\d,.]+)/),
-    VINs: VINs.sort().join(', ')
-  };
-}
+    const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+    if (files.length !== 2) return alert("Please drop exactly two PDF files.");
 
-function normalize(s) {
-  return s.toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ,.-]/gi, '').trim();
-}
+    const [text1, text2] = await Promise.all([extractPDFText(files[0]), extractPDFText(files[1])]);
+    const data1 = extractFields(text1);
+    const data2 = extractFields(text2);
+    compareFields(data1, data2);
+  });
 
-function floatsAreClose(a, b, tol = 0.5) {
-  const n1 = parseFloat(a.replace(/,/g, ''));
-  const n2 = parseFloat(b.replace(/,/g, ''));
-  return Math.abs(n1 - n2) <= tol;
-}
-
-function compareText(a, b) {
-  return normalize(a) === normalize(b);
-}
-
-function compareVINs(v1, v2) {
-  return v1.split(',').sort().join(',') === v2.split(',').sort().join(',');
-}
-
-function compareFields(data1, data2) {
-  const fields = Object.keys(data1);
-  const table = document.getElementById("resultTable");
-  const tbody = table.querySelector("tbody");
-  tbody.innerHTML = '';
-
-  for (const field of fields) {
-    const val1 = data1[field] || '';
-    const val2 = data2[field] || '';
-    let match = false;
-
-    if (field === 'Weight') match = floatsAreClose(val1, val2);
-    else if (field === 'VINs') match = compareVINs(val1, val2);
-    else match = compareText(val1, val2);
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${field}</td>
-      <td class="${match ? 'match' : 'diff'}">${val1}</td>
-      <td class="${match ? 'match' : 'diff'}">${val2}</td>
-      <td class="${match ? 'match' : 'diff'}">${match ? '✅ Same' : '❌ Different'}</td>
-    `;
-    tbody.appendChild(row);
+  async function extractPDFText(file) {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n';
+    }
+    return text;
   }
 
-  table.style.display = 'table';
-}
+  function extractFields(text) {
+    const normalize = str => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const find = (pattern) => {
+      const m = text.match(new RegExp(pattern, 'i'));
+      return m ? normalize(m[1]) : '';
+    };
+    const VINs = [...text.matchAll(/VIN[:#\s]*([A-HJ-NPR-Z0-9]{17})/gi)].map(m => m[1].toUpperCase());
+
+    return {
+      Shipper: find(/(?:Shipper|EXPORTER)[\s:]*([\s\S]*?QUEBEC INC)/),
+      Consignee: find(/STE WHITE LINE CO[\s\S]*?(?=Same|Email|COTONOU)/),
+      Destination: find(/PORT OF DISCHARGE[:\s]*([A-Z ]+)/),
+      Container: find(/CNT[:\s]*([A-Z0-9]+)/) || find(/FANU\s*([0-9]+)/),
+      Seal: find(/SEAL[:\s]*([0-9A-Z]+)/),
+      Weight: find(/(?:Gross Weight|Weight)[^\d]*([\d,.]+)/),
+      VINs: VINs.sort().join(', ')
+    };
+  }
+
+  function floatsClose(a, b, tol = 1) {
+    const f1 = parseFloat((a || '0').replace(/,/g, ''));
+    const f2 = parseFloat((b || '0').replace(/,/g, ''));
+    return Math.abs(f1 - f2) < tol;
+  }
+
+  function compareFields(d1, d2) {
+    const table = document.getElementById("resultTable");
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = '';
+    table.style.display = 'table';
+
+    for (const key in d1) {
+      const val1 = d1[key];
+      const val2 = d2[key];
+
+      let match = false;
+      if (key === 'Weight') match = floatsClose(val1, val2);
+      else if (key === 'VINs') match = val1 === val2;
+      else match = val1 === val2;
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${key}</td>
+        <td class="${match ? 'match' : 'diff'}">${val1}</td>
+        <td class="${match ? 'match' : 'diff'}">${val2}</td>
+        <td class="${match ? 'match' : 'diff'}">${match ? '✅ Same' : '❌ Different'}</td>
+      `;
+      tbody.appendChild(row);
+    }
+  }
 </script>
 
 </body>
 </html>
-
-
