@@ -2,14 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Drop & Compare Bills of Lading</title>
+  <title>PDF Comparator - Drop and Compare</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
     body {
       font-family: sans-serif;
       padding: 20px;
     }
-    h1 { text-align: center; }
+    h1 {
+      text-align: center;
+    }
     #dropzone {
       border: 3px dashed #999;
       border-radius: 10px;
@@ -18,11 +20,19 @@
       background: #f9f9f9;
       color: #666;
       font-size: 18px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
     #dropzone.dragover {
       background: #e6f7ff;
       border-color: #00aaff;
+    }
+    #compareBtn {
+      display: none;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      display: block;
+      cursor: pointer;
     }
     table {
       width: 100%;
@@ -40,19 +50,29 @@
 </head>
 <body>
 
-  <h1>Drop Two PDF Files to Compare Bills of Lading</h1>
-  <div id="dropzone">Drop your two PDF files here</div>
+  <h1>Drop Two PDFs to Compare</h1>
+  <div id="dropzone">Drop exactly 2 PDF files here</div>
+
+  <button id="compareBtn">Compare Files</button>
 
   <table id="resultTable" style="display:none">
     <thead>
-      <tr><th>Field</th><th>File 1</th><th>File 2</th></tr>
+      <tr>
+        <th>Field</th>
+        <th>File 1</th>
+        <th>File 2</th>
+        <th>Comparison</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    const dropzone = document.getElementById('dropzone');
     let file1 = null, file2 = null;
+    let text1 = '', text2 = '';
+
+    const dropzone = document.getElementById('dropzone');
+    const compareBtn = document.getElementById('compareBtn');
 
     dropzone.addEventListener('dragover', e => {
       e.preventDefault();
@@ -66,17 +86,23 @@
     dropzone.addEventListener('drop', async e => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
-
       const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+
       if (files.length !== 2) {
-        alert("Please drop exactly two PDF files.");
+        alert("Drop exactly TWO PDF files.");
         return;
       }
 
       [file1, file2] = files;
+      dropzone.textContent = `Files loaded: ${file1.name} & ${file2.name}`;
+      compareBtn.style.display = 'block';
+    });
 
-      const text1 = await extractPDFText(file1);
-      const text2 = await extractPDFText(file2);
+    compareBtn.addEventListener('click', async () => {
+      if (!file1 || !file2) return alert("Please drop two PDF files first.");
+
+      text1 = await extractPDFText(file1);
+      text2 = await extractPDFText(file2);
 
       const fields1 = extractFields(text1);
       const fields2 = extractFields(text2);
@@ -137,15 +163,20 @@
         const val1 = Array.isArray(f1[key]) ? f1[key].join(", ") : (f1[key] || '');
         const val2 = Array.isArray(f2[key]) ? f2[key].join(", ") : (f2[key] || '');
 
-        const row = document.createElement("tr");
         const match = val1 === val2;
+        const status = match ? 'Same' : 'Different';
+        const className = match ? 'match' : 'diff';
+
+        const row = document.createElement("tr");
         row.innerHTML = `
           <td>${key}</td>
-          <td class="${match ? 'match' : 'diff'}">${val1}</td>
-          <td class="${match ? 'match' : 'diff'}">${val2}</td>
+          <td class="${className}">${val1}</td>
+          <td class="${className}">${val2}</td>
+          <td class="${className}">${status}</td>
         `;
         tbody.appendChild(row);
       }
+
       table.style.display = 'table';
     }
   </script>
