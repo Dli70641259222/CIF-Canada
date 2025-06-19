@@ -34,6 +34,16 @@
       display: block;
       cursor: pointer;
     }
+    #log {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-line;
+      height: 160px;
+      overflow-y: auto;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -55,6 +65,8 @@
 
   <button id="compareBtn">Compare Files</button>
 
+  <div id="log">Log:</div>
+
   <table id="resultTable" style="display:none">
     <thead>
       <tr>
@@ -73,6 +85,12 @@
 
     const dropzone = document.getElementById('dropzone');
     const compareBtn = document.getElementById('compareBtn');
+    const logDiv = document.getElementById('log');
+
+    function log(message) {
+      logDiv.textContent += `\n${message}`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
 
     dropzone.addEventListener('dragover', e => {
       e.preventDefault();
@@ -86,6 +104,8 @@
     dropzone.addEventListener('drop', async e => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
+      logDiv.textContent = "Log:"; // reset log
+
       const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
 
       if (files.length !== 2) {
@@ -94,6 +114,7 @@
       }
 
       [file1, file2] = files;
+      log(`✅ Files loaded:\n - ${file1.name}\n - ${file2.name}`);
       dropzone.textContent = `Files loaded: ${file1.name} & ${file2.name}`;
       compareBtn.style.display = 'block';
     });
@@ -101,13 +122,22 @@
     compareBtn.addEventListener('click', async () => {
       if (!file1 || !file2) return alert("Please drop two PDF files first.");
 
+      log("\n🔄 Extracting text from PDF #1...");
       text1 = await extractPDFText(file1);
-      text2 = await extractPDFText(file2);
+      log("✅ Extracted text from File 1.");
 
+      log("\n🔄 Extracting text from PDF #2...");
+      text2 = await extractPDFText(file2);
+      log("✅ Extracted text from File 2.");
+
+      log("\n🔍 Extracting key fields...");
       const fields1 = extractFields(text1);
       const fields2 = extractFields(text2);
+      log("✅ Fields extracted from both files.");
 
+      log("\n🔎 Comparing fields...");
       compareFields(fields1, fields2);
+      log("✅ Comparison complete.");
     });
 
     async function extractPDFText(file) {
