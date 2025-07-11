@@ -22,77 +22,43 @@
     <h2 class="mb-4 text-center">Bill of Lading Generator</h2>
     <form id="bolForm">
 
+      <!-- Shipper Info -->
       <div class="section-box">
         <h5>Shipper Info</h5>
-        <div class="mb-3">
-          <label>Shipper Name:</label>
-          <input type="text" class="form-control" id="shipper" required />
-        </div>
-        <div class="mb-3">
-          <label>Shipper Address:</label>
-          <input type="text" class="form-control" id="shipperAddress" />
-        </div>
-        <div class="mb-3">
-          <label>Shipper Email:</label>
-          <input type="email" class="form-control" id="shipperEmail" />
-        </div>
-        <div class="mb-3">
-          <label>Shipper Phone:</label>
-          <input type="text" class="form-control" id="shipperPhone" />
-        </div>
-        <div class="mb-3">
-          <label>Shipper Tax ID:</label>
-          <input type="text" class="form-control" id="shipperTaxId" />
-        </div>
+        <div class="mb-3"><label>Shipper Name:</label><input type="text" class="form-control" id="shipper" required /></div>
+        <div class="mb-3"><label>Shipper Address:</label><input type="text" class="form-control" id="shipperAddress" /></div>
+        <div class="mb-3"><label>Shipper Email:</label><input type="email" class="form-control" id="shipperEmail" /></div>
+        <div class="mb-3"><label>Shipper Phone:</label><input type="text" class="form-control" id="shipperPhone" /></div>
+        <div class="mb-3"><label>Shipper Tax ID:</label><input type="text" class="form-control" id="shipperTaxId" /></div>
       </div>
 
+      <!-- Consignee Info -->
       <div class="section-box">
         <h5>Consignee Info</h5>
-        <div class="mb-3">
-          <label>Consignee Name:</label>
-          <input type="text" class="form-control" id="consignee" required />
-        </div>
-        <div class="mb-3">
-          <label>Consignee Address:</label>
-          <input type="text" class="form-control" id="consigneeAddress" />
-        </div>
-        <div class="mb-3">
-          <label>Consignee Email:</label>
-          <input type="email" class="form-control" id="consigneeEmail" />
-        </div>
-        <div class="mb-3">
-          <label>Consignee Phone:</label>
-          <input type="text" class="form-control" id="consigneePhone" />
-        </div>
-        <div class="mb-3">
-          <label>Consignee Tax ID:</label>
-          <input type="text" class="form-control" id="consigneeTaxId" />
-        </div>
+        <div class="mb-3"><label>Consignee Name:</label><input type="text" class="form-control" id="consignee" required /></div>
+        <div class="mb-3"><label>Consignee Address:</label><input type="text" class="form-control" id="consigneeAddress" /></div>
+        <div class="mb-3"><label>Consignee Email:</label><input type="email" class="form-control" id="consigneeEmail" /></div>
+        <div class="mb-3"><label>Consignee Phone:</label><input type="text" class="form-control" id="consigneePhone" /></div>
+        <div class="mb-3"><label>Consignee Tax ID:</label><input type="text" class="form-control" id="consigneeTaxId" /></div>
       </div>
 
+      <!-- Notify Party Info -->
       <div class="section-box">
         <h5>Notify Party</h5>
-        <div class="mb-3">
-          <label>Notify:</label>
-          <input type="text" class="form-control" id="notify" />
-        </div>
+        <div class="mb-3"><label>Notify Name:</label><input type="text" class="form-control" id="notify" /></div>
+        <div class="mb-3"><label>Notify Address:</label><input type="text" class="form-control" id="notifyAddress" /></div>
+        <div class="mb-3"><label>Notify Email:</label><input type="email" class="form-control" id="notifyEmail" /></div>
+        <div class="mb-3"><label>Notify Phone:</label><input type="text" class="form-control" id="notifyPhone" /></div>
       </div>
 
+      <!-- Shipment Details -->
       <div class="row mb-3">
-        <div class="col-md-6">
-          <label>Invoicing:</label>
-          <input type="text" class="form-control" id="invoicing" />
-        </div>
-        <div class="col-md-3">
-          <label>Port of Loading:</label>
-          <input type="text" class="form-control" id="port" />
-        </div>
-        <div class="col-md-3">
-          <label>Destination:</label>
-          <input type="text" class="form-control" id="destination" />
-        </div>
+        <div class="col-md-6"><label>Invoicing:</label><input type="text" class="form-control" id="invoicing" /></div>
+        <div class="col-md-3"><label>Port of Loading:</label><input type="text" class="form-control" id="port" /></div>
+        <div class="col-md-3"><label>Destination:</label><input type="text" class="form-control" id="destination" /></div>
       </div>
 
+      <!-- Car Details -->
       <h5>Car Details</h5>
       <div id="carList"></div>
       <button type="button" class="btn btn-secondary my-3" onclick="addCar()">Add Car</button>
@@ -103,28 +69,15 @@
 
   <script>
     let carIndex = 0;
-
     function addCar() {
       const container = document.createElement('div');
       container.classList.add('card', 'p-3', 'mb-3');
       container.innerHTML = `
         <div class="row mb-2">
-          <div class="col-md-3">
-            <label>Car Name:</label>
-            <input type="text" class="form-control" name="carName${carIndex}" />
-          </div>
-          <div class="col-md-3">
-            <label>VIN:</label>
-            <input type="text" class="form-control" name="vin${carIndex}" />
-          </div>
-          <div class="col-md-2">
-            <label>Price:</label>
-            <input type="text" class="form-control" name="price${carIndex}" />
-          </div>
-          <div class="col-md-4">
-            <label>B13 Info:</label>
-            <input type="text" class="form-control" name="b13${carIndex}" />
-          </div>
+          <div class="col-md-3"><label>Car Name:</label><input type="text" class="form-control" name="carName${carIndex}" /></div>
+          <div class="col-md-3"><label>VIN:</label><input type="text" class="form-control" name="vin${carIndex}" /></div>
+          <div class="col-md-2"><label>Price:</label><input type="text" class="form-control" name="price${carIndex}" /></div>
+          <div class="col-md-4"><label>B13 Info:</label><input type="text" class="form-control" name="b13${carIndex}" /></div>
         </div>
         <div class="checkboxes">
           <label><input type="checkbox" name="title${carIndex}" /> Title</label>
@@ -139,9 +92,8 @@
       carIndex++;
     }
 
-    document.getElementById('bolForm').addEventListener('submit', async function (e) {
+    document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
-
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       let y = 10;
@@ -150,8 +102,7 @@
       doc.text('BILL OF LADING', 105, y, { align: 'center' });
       y += 12;
 
-      doc.setFontSize(11);
-      function writeBlock(title, entries) {
+      const writeBlock = (title, entries) => {
         doc.setFont(undefined, 'bold');
         doc.text(`${title}:`, 10, y);
         doc.setFont(undefined, 'normal');
@@ -161,7 +112,7 @@
           y += 5;
         });
         y += 2;
-      }
+      };
 
       writeBlock('Shipper', [
         ['Name', document.getElementById('shipper').value],
@@ -180,7 +131,10 @@
       ]);
 
       writeBlock('Notify Party', [
-        ['Name', document.getElementById('notify').value]
+        ['Name', document.getElementById('notify').value],
+        ['Address', document.getElementById('notifyAddress').value],
+        ['Email', document.getElementById('notifyEmail').value],
+        ['Phone', document.getElementById('notifyPhone').value]
       ]);
 
       writeBlock('Shipment Details', [
@@ -189,10 +143,23 @@
         ['Destination', document.getElementById('destination').value]
       ]);
 
+      // Car Details Table
       doc.setFont(undefined, 'bold');
       doc.text('Car Details:', 10, y);
-      doc.setFont(undefined, 'normal');
       y += 6;
+
+      const headers = ['#', 'Car Name', 'VIN', 'Price', 'B13 Info', 'Condition'];
+      const startX = 10;
+      const rowHeight = 6;
+      const colWidths = [8, 40, 45, 20, 30, 50];
+
+      // Header
+      doc.setFont(undefined, 'bold');
+      headers.forEach((header, i) => {
+        doc.text(header, startX + colWidths.slice(0, i).reduce((a, b) => a + b, 0), y);
+      });
+      y += rowHeight;
+      doc.setFont(undefined, 'normal');
 
       const carCards = document.querySelectorAll('#carList .card');
       carCards.forEach((card, index) => {
@@ -200,24 +167,14 @@
         const vin = card.querySelector(`[name="vin${index}"]`).value;
         const price = card.querySelector(`[name="price${index}"]`).value;
         const b13 = card.querySelector(`[name="b13${index}"]`).value;
-        const title = card.querySelector(`[name="title${index}"]`).checked ? 'Title' : '';
-        const key = card.querySelector(`[name="key${index}"]`).checked ? 'Key' : '';
-        const r = card.querySelector(`[name="r${index}"]`).checked ? 'R' : '';
-        const acc = card.querySelector(`[name="acc${index}"]`).checked ? 'Acc' : '';
-        const nr = card.querySelector(`[name="nr${index}"]`).checked ? 'NR' : '';
-        const nacc = card.querySelector(`[name="nacc${index}"]`).checked ? 'NACC' : '';
-        const conditions = [title, key, r, acc, nr, nacc].filter(Boolean).join(', ');
+        const conds = ['title', 'key', 'r', 'acc', 'nr', 'nacc'].map(id => card.querySelector(`[name="${id}${index}"]`).checked ? id.toUpperCase() : '').filter(Boolean).join(', ');
 
-        doc.setFontSize(10);
-        doc.text(`${index + 1}) ${name} | VIN: ${vin} | $${price} | B13: ${b13}`, 10, y);
-        y += 5;
-        doc.text(`    Condition: ${conditions}`, 10, y);
-        y += 7;
-
-        if (y > 270) {
-          doc.addPage();
-          y = 10;
-        }
+        const values = [index + 1, name, vin, price, b13, conds];
+        values.forEach((val, i) => {
+          doc.text(String(val), startX + colWidths.slice(0, i).reduce((a, b) => a + b, 0), y);
+        });
+        y += rowHeight;
+        if (y > 270) { doc.addPage(); y = 10; }
       });
 
       doc.save('bill_of_lading.pdf');
