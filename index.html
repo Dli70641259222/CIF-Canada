@@ -2,84 +2,127 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PDF Bill of Lading Comparator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car B/L Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f7f7f7; }
-    h1 { text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    td, th { padding: 8px; border: 1px solid #ddd; text-align: left; }
-    th { background-color: #eee; }
-    .match { background: #c8f7c5; }
-    .mismatch { background: #f7c5c5; }
+    .checkboxes label { margin-right: 10px; }
   </style>
 </head>
-<body>
-  <h1>PDF Bill of Lading Comparator</h1>
-  <input type="file" id="pdf1" accept="application/pdf">
-  <input type="file" id="pdf2" accept="application/pdf">
-  <button onclick="comparePDFs()">Compare PDFs</button>
-  <div id="result"></div>
+<body class="p-4">
+  <div class="container">
+    <h2 class="mb-4">Bill of Lading Generator</h2>
+    <form id="bolForm">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label>Shipper Name:</label>
+          <input type="text" class="form-control" id="shipper" required />
+        </div>
+        <div class="col-md-6">
+          <label>Consignee Name:</label>
+          <input type="text" class="form-control" id="consignee" required />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label>Invoicing:</label>
+          <input type="text" class="form-control" id="invoicing" />
+        </div>
+        <div class="col-md-3">
+          <label>Port of Loading:</label>
+          <input type="text" class="form-control" id="port" />
+        </div>
+        <div class="col-md-3">
+          <label>Destination:</label>
+          <input type="text" class="form-control" id="destination" />
+        </div>
+      </div>
+      
+      <h5>Car Details</h5>
+      <div id="carList"></div>
+      <button type="button" class="btn btn-secondary my-3" onclick="addCar()">Add Car</button>
+      <br />
+      <button type="submit" class="btn btn-primary">Generate B/L PDF</button>
+    </form>
+  </div>
 
   <script>
-    async function extractTextFromPDF(file) {
-      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-      let text = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(i => i.str).join(" ") + "\n";
-      }
-      return text;
+    let carIndex = 0;
+    function addCar() {
+      const container = document.createElement('div');
+      container.classList.add('card', 'p-3', 'mb-3');
+      container.innerHTML = `
+        <div class="row mb-2">
+          <div class="col-md-4">
+            <label>Car Name:</label>
+            <input type="text" class="form-control" name="carName${carIndex}" />
+          </div>
+          <div class="col-md-4">
+            <label>VIN:</label>
+            <input type="text" class="form-control" name="vin${carIndex}" />
+          </div>
+          <div class="col-md-4">
+            <label>Price:</label>
+            <input type="text" class="form-control" name="price${carIndex}" />
+          </div>
+        </div>
+        <div class="checkboxes">
+          <label><input type="checkbox" name="title${carIndex}" /> Title</label>
+          <label><input type="checkbox" name="key${carIndex}" /> Key</label>
+          <label><input type="checkbox" name="r${carIndex}" /> R</label>
+          <label><input type="checkbox" name="acc${carIndex}" /> Acc</label>
+          <label><input type="checkbox" name="nr${carIndex}" /> NR</label>
+        </div>
+      `;
+      document.getElementById('carList').appendChild(container);
+      carIndex++;
     }
 
-    function extractFields(text) {
-      return {
-        shipper: text.match(/(?:SHIPPER|EXPORTER)[^\n]+([\s\S]{1,100})/)?.[1]?.trim() || '',
-        consignee: text.match(/(?:CONSIGNEE|CONSINGED TO)[^\n]+([\s\S]{1,100})/)?.[1]?.trim() || '',
-        container: text.match(/FANU[0-9]+/)?.[0] || '',
-        seal: text.match(/SEAL[: ]+([0-9]+)/i)?.[1] || '',
-        vins: [...text.matchAll(/VIN[:# ]+([A-HJ-NPR-Z0-9]{17})/gi)].map(m => m[1]),
-        weight: text.match(/(\d{4,6}\.?[\d]*)\s*K[GM]/i)?.[1] || '',
-        portLoad: text.match(/PORT OF LOADING[: ]+([A-Z,\s]+)/i)?.[1]?.trim() || '',
-        portDischarge: text.match(/PORT OF DISCHARGE[: ]+([A-Z,\s]+)/i)?.[1]?.trim() || '',
-      };
-    }
+    document.getElementById('bolForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const {{ jsPDF }} = window.jspdf;
+      const doc = new jsPDF();
 
-    function compareFields(f1, f2) {
-      const resultTable = document.createElement('table');
-      resultTable.innerHTML = `<tr><th>Field</th><th>File 1</th><th>File 2</th><th>Match?</th></tr>`;
-      const addRow = (label, v1, v2) => {
-        const isMatch = JSON.stringify(v1) === JSON.stringify(v2);
-        resultTable.innerHTML += `<tr class="${isMatch ? 'match' : 'mismatch'}">
-          <td>${label}</td><td>${v1}</td><td>${v2}</td><td>${isMatch ? '✅' : '❌'}</td></tr>`;
-      };
-      addRow('Shipper', f1.shipper, f2.shipper);
-      addRow('Consignee', f1.consignee, f2.consignee);
-      addRow('Container Number', f1.container, f2.container);
-      addRow('Seal Number', f1.seal, f2.seal);
-      addRow('Weight', f1.weight, f2.weight);
-      addRow('Port of Loading', f1.portLoad, f2.portLoad);
-      addRow('Port of Discharge', f1.portDischarge, f2.portDischarge);
-      addRow('VINs', f1.vins.join('<br>'), f2.vins.join('<br>'));
-      return resultTable;
-    }
+      const shipper = document.getElementById('shipper').value;
+      const consignee = document.getElementById('consignee').value;
+      const invoicing = document.getElementById('invoicing').value;
+      const port = document.getElementById('port').value;
+      const destination = document.getElementById('destination').value;
 
-    async function comparePDFs() {
-      const file1 = document.getElementById('pdf1').files[0];
-      const file2 = document.getElementById('pdf2').files[0];
-      if (!file1 || !file2) return alert("Please upload two PDF files.");
-      const [text1, text2] = await Promise.all([
-        extractTextFromPDF(file1),
-        extractTextFromPDF(file2)
-      ]);
-      const fields1 = extractFields(text1);
-      const fields2 = extractFields(text2);
-      const result = compareFields(fields1, fields2);
-      document.getElementById('result').innerHTML = '';
-      document.getElementById('result').appendChild(result);
-    }
+      let y = 10;
+      doc.setFontSize(12);
+      doc.text(`Shipper: ${shipper}`, 10, y);
+      y += 7;
+      doc.text(`Consignee: ${consignee}`, 10, y);
+      y += 7;
+      doc.text(`Invoicing: ${invoicing}`, 10, y);
+      y += 7;
+      doc.text(`Port of Loading: ${port}`, 10, y);
+      y += 7;
+      doc.text(`Destination: ${destination}`, 10, y);
+      y += 10;
+      doc.text('Cars:', 10, y);
+      y += 7;
+
+      const carCards = document.querySelectorAll('#carList .card');
+      carCards.forEach((card, index) => {
+        const name = card.querySelector(`[name="carName${index}"]`).value;
+        const vin = card.querySelector(`[name="vin${index}"]`).value;
+        const price = card.querySelector(`[name="price${index}"]`).value;
+        const title = card.querySelector(`[name="title${index}"]`).checked ? 'Title' : '';
+        const key = card.querySelector(`[name="key${index}"]`).checked ? 'Key' : '';
+        const r = card.querySelector(`[name="r${index}"]`).checked ? 'R' : '';
+        const acc = card.querySelector(`[name="acc${index}"]`).checked ? 'Acc' : '';
+        const nr = card.querySelector(`[name="nr${index}"]`).checked ? 'NR' : '';
+
+        const conditions = [title, key, r, acc, nr].filter(Boolean).join(', ');
+        doc.text(`${index + 1}) ${name} | VIN: ${vin} | $${price} | ${conditions}`, 10, y);
+        y += 7;
+      });
+
+      doc.save('bill_of_lading.pdf');
+    });
   </script>
 </body>
 </html>
