@@ -38,7 +38,7 @@
           <input type="text" class="form-control" id="destination" />
         </div>
       </div>
-      
+
       <h5>Car Details</h5>
       <div id="carList"></div>
       <button type="button" class="btn btn-secondary my-3" onclick="addCar()">Add Car</button>
@@ -49,6 +49,7 @@
 
   <script>
     let carIndex = 0;
+
     function addCar() {
       const container = document.createElement('div');
       container.classList.add('card', 'p-3', 'mb-3');
@@ -81,7 +82,8 @@
 
     document.getElementById('bolForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const {{ jsPDF }} = window.jspdf;
+
+      const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
       const shipper = document.getElementById('shipper').value;
@@ -92,18 +94,13 @@
 
       let y = 10;
       doc.setFontSize(12);
-      doc.text(`Shipper: ${shipper}`, 10, y);
-      y += 7;
-      doc.text(`Consignee: ${consignee}`, 10, y);
-      y += 7;
-      doc.text(`Invoicing: ${invoicing}`, 10, y);
-      y += 7;
-      doc.text(`Port of Loading: ${port}`, 10, y);
-      y += 7;
-      doc.text(`Destination: ${destination}`, 10, y);
-      y += 10;
-      doc.text('Cars:', 10, y);
-      y += 7;
+      doc.text(`Shipper: ${shipper}`, 10, y); y += 7;
+      doc.text(`Consignee: ${consignee}`, 10, y); y += 7;
+      doc.text(`Invoicing: ${invoicing}`, 10, y); y += 7;
+      doc.text(`Port of Loading: ${port}`, 10, y); y += 7;
+      doc.text(`Destination: ${destination}`, 10, y); y += 10;
+
+      doc.text('Cars:', 10, y); y += 7;
 
       const carCards = document.querySelectorAll('#carList .card');
       carCards.forEach((card, index) => {
@@ -115,10 +112,14 @@
         const r = card.querySelector(`[name="r${index}"]`).checked ? 'R' : '';
         const acc = card.querySelector(`[name="acc${index}"]`).checked ? 'Acc' : '';
         const nr = card.querySelector(`[name="nr${index}"]`).checked ? 'NR' : '';
-
         const conditions = [title, key, r, acc, nr].filter(Boolean).join(', ');
+
         doc.text(`${index + 1}) ${name} | VIN: ${vin} | $${price} | ${conditions}`, 10, y);
         y += 7;
+        if (y > 270) {
+          doc.addPage();
+          y = 10;
+        }
       });
 
       doc.save('bill_of_lading.pdf');
