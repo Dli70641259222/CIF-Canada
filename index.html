@@ -32,6 +32,18 @@
           <label>Shipper Address:</label>
           <input type="text" class="form-control" id="shipperAddress" />
         </div>
+        <div class="mb-3">
+          <label>Shipper Email:</label>
+          <input type="email" class="form-control" id="shipperEmail" />
+        </div>
+        <div class="mb-3">
+          <label>Shipper Phone:</label>
+          <input type="text" class="form-control" id="shipperPhone" />
+        </div>
+        <div class="mb-3">
+          <label>Shipper Tax ID:</label>
+          <input type="text" class="form-control" id="shipperTaxId" />
+        </div>
       </div>
 
       <div class="section-box">
@@ -43,6 +55,18 @@
         <div class="mb-3">
           <label>Consignee Address:</label>
           <input type="text" class="form-control" id="consigneeAddress" />
+        </div>
+        <div class="mb-3">
+          <label>Consignee Email:</label>
+          <input type="email" class="form-control" id="consigneeEmail" />
+        </div>
+        <div class="mb-3">
+          <label>Consignee Phone:</label>
+          <input type="text" class="form-control" id="consigneePhone" />
+        </div>
+        <div class="mb-3">
+          <label>Consignee Tax ID:</label>
+          <input type="text" class="form-control" id="consigneeTaxId" />
         </div>
       </div>
 
@@ -121,29 +145,54 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       let y = 10;
-      doc.setFontSize(14);
-      doc.text('BILL OF LADING', 105, y, { align: 'center' });
-      y += 10;
 
-      function writeText(label, value) {
-        doc.setFontSize(11);
-        doc.text(`${label}: ${value}`, 10, y);
+      doc.setFontSize(16);
+      doc.text('BILL OF LADING', 105, y, { align: 'center' });
+      y += 12;
+
+      doc.setFontSize(11);
+      function writeBlock(title, entries) {
+        doc.setFont(undefined, 'bold');
+        doc.text(`${title}:`, 10, y);
+        doc.setFont(undefined, 'normal');
         y += 6;
+        entries.forEach(([label, value]) => {
+          doc.text(`  ${label}: ${value}`, 12, y);
+          y += 5;
+        });
+        y += 2;
       }
 
-      writeText('Shipper', document.getElementById('shipper').value);
-      writeText('Shipper Address', document.getElementById('shipperAddress').value);
-      writeText('Consignee', document.getElementById('consignee').value);
-      writeText('Consignee Address', document.getElementById('consigneeAddress').value);
-      writeText('Notify Party', document.getElementById('notify').value);
-      writeText('Invoicing', document.getElementById('invoicing').value);
-      writeText('Port of Loading', document.getElementById('port').value);
-      writeText('Destination', document.getElementById('destination').value);
+      writeBlock('Shipper', [
+        ['Name', document.getElementById('shipper').value],
+        ['Address', document.getElementById('shipperAddress').value],
+        ['Email', document.getElementById('shipperEmail').value],
+        ['Phone', document.getElementById('shipperPhone').value],
+        ['Tax ID', document.getElementById('shipperTaxId').value]
+      ]);
 
-      y += 5;
-      doc.setFontSize(12);
+      writeBlock('Consignee', [
+        ['Name', document.getElementById('consignee').value],
+        ['Address', document.getElementById('consigneeAddress').value],
+        ['Email', document.getElementById('consigneeEmail').value],
+        ['Phone', document.getElementById('consigneePhone').value],
+        ['Tax ID', document.getElementById('consigneeTaxId').value]
+      ]);
+
+      writeBlock('Notify Party', [
+        ['Name', document.getElementById('notify').value]
+      ]);
+
+      writeBlock('Shipment Details', [
+        ['Invoicing', document.getElementById('invoicing').value],
+        ['Port of Loading', document.getElementById('port').value],
+        ['Destination', document.getElementById('destination').value]
+      ]);
+
+      doc.setFont(undefined, 'bold');
       doc.text('Car Details:', 10, y);
-      y += 7;
+      doc.setFont(undefined, 'normal');
+      y += 6;
 
       const carCards = document.querySelectorAll('#carList .card');
       carCards.forEach((card, index) => {
@@ -160,7 +209,7 @@
         const conditions = [title, key, r, acc, nr, nacc].filter(Boolean).join(', ');
 
         doc.setFontSize(10);
-        doc.text(`${index + 1}) ${name} | VIN: ${vin} | Price: $${price} | B13: ${b13}`, 10, y);
+        doc.text(`${index + 1}) ${name} | VIN: ${vin} | $${price} | B13: ${b13}`, 10, y);
         y += 5;
         doc.text(`    Condition: ${conditions}`, 10, y);
         y += 7;
