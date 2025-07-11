@@ -111,7 +111,6 @@
         const key = card.querySelector(`[name="key${index}"]`).checked ? 'Key' : '';
         const r = card.querySelector(`[name="r${index}"]`).checked ? 'R' : '';
         const acc = card.querySelector(`[name="acc${index}"]`).checked ? 'Acc' : '';
-        const Nacc = card.querySelector(`[name="Nacc${index}"]`).checked ? 'NAcc' : '';
         const nr = card.querySelector(`[name="nr${index}"]`).checked ? 'NR' : '';
         const conditions = [title, key, r, acc, nr].filter(Boolean).join(', ');
 
