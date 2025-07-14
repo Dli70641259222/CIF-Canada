@@ -1,96 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stylish BOL Generator</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    body { background: #f2f2f2; }
-    .section-box {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .checkboxes label { margin-right: 10px; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Shipping BOL Generator</title>
+  <script defer src="script.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="p-4">
-  <div class="container">
-    <h2 class="mb-4 text-center text-warning">CIF Canada Bill of Lading Generator</h2>
-    <form id="bolForm">
-      <!-- Inputs stay the same -->
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">Car Shipping - Bill of Lading Generator</h1>
+
+    <form id="bolForm" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded" required>
+        <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded" required>
+        <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded">
+        <input type="text" name="port" placeholder="Port of Loading" class="border p-2 rounded">
+        <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded">
+        <input type="text" name="container" placeholder="Container Number" class="border p-2 rounded">
+        <input type="text" name="seal" placeholder="Seal Number" class="border p-2 rounded">
+        <input type="text" name="weight" placeholder="Weight (kg)" class="border p-2 rounded">
+      </div>
+
+      <h2 class="text-lg font-semibold mt-6">Cars</h2>
+      <table id="carsTable" class="w-full text-sm table-auto border">
+        <thead>
+          <tr class="bg-gray-200">
+            <th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
+            <td><input type="text" name="car_vin[]" class="border p-1 w-full"></td>
+            <td><input type="text" name="car_price[]" class="border p-1 w-full"></td>
+            <td><input type="text" name="car_condition[]" class="border p-1 w-full"></td>
+            <td><button type="button" onclick="removeRow(this)" class="text-red-600">Remove</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" onclick="addRow()" class="bg-blue-600 text-white px-4 py-2 rounded">+ Add Car</button>
+
+      <div class="text-center mt-6">
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded">Generate BOL PDF</button>
+      </div>
     </form>
   </div>
 
   <script>
-    let carIndex = 0;
-    function addCar() {
-      const container = document.createElement('div');
-      container.classList.add('card', 'p-3', 'mb-3');
-      container.innerHTML = `...`;
-      document.getElementById('carList').appendChild(container);
-      carIndex++;
+    function addRow() {
+      const table = document.getElementById('carsTable').getElementsByTagName('tbody')[0];
+      const newRow = table.insertRow();
+      newRow.innerHTML = `
+        <tr>
+          <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
+          <td><input type="text" name="car_vin[]" class="border p-1 w-full"></td>
+          <td><input type="text" name="car_price[]" class="border p-1 w-full"></td>
+          <td><input type="text" name="car_condition[]" class="border p-1 w-full"></td>
+          <td><button type="button" onclick="removeRow(this)" class="text-red-600">Remove</button></td>
+        </tr>
+      `;
+    }
+
+    function removeRow(btn) {
+      const row = btn.closest('tr');
+      row.remove();
     }
 
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      let y = 10;
-
-      doc.setFontSize(16);
-      doc.setTextColor(212, 175, 55);
-      doc.setFont("helvetica", "bold");
-      doc.text(' BILL OF LADING ', 105, y, { align: 'center' });
-      y += 12;
-
-      const writeBlock = (title, entries) => {
-        doc.setFontSize(12);
-        doc.setTextColor(33, 37, 41);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${title}`, 10, y);
-        y += 6;
-        doc.setFont("helvetica", "normal");
-        entries.forEach(([label, value]) => {
-          doc.text(`  ${label}:`, 12, y);
-          doc.setTextColor(100, 100, 100);
-          doc.text(`${value}`, 50, y);
-          doc.setTextColor(33, 37, 41);
-          y += 5;
-        });
-        y += 2;
-      };
-
-      writeBlock('Shipper', [['Name', shipper.value], ['Address', shipperAddress.value], ['Email', shipperEmail.value], ['Phone', shipperPhone.value], ['Tax ID', shipperTaxId.value]]);
-      writeBlock('Consignee', [['Name', consignee.value], ['Address', consigneeAddress.value], ['Email', consigneeEmail.value], ['Phone', consigneePhone.value], ['Tax ID', consigneeTaxId.value]]);
-      writeBlock('Notify Party', [['Name', notify.value], ['Address', notifyAddress.value], ['Email', notifyEmail.value], ['Phone', notifyPhone.value]]);
-      writeBlock('Shipment', [['Invoicing', invoicing.value], ['Port', port.value], ['Destination', destination.value]]);
-
-      const carCards = document.querySelectorAll('#carList .card');
-      const rows = [];
-      carCards.forEach((card, index) => {
-        const get = name => card.querySelector(`[name="${name}${index}"]`).value;
-        const getCheck = name => card.querySelector(`[name="${name}${index}"]`).checked ? name.toUpperCase() : '';
-        const conditions = ['title','key','r','acc','nr','nacc'].map(getCheck).filter(Boolean).join(', ');
-        rows.push([index + 1, get('carName'), get('vin'), get('price'), get('b13'), conditions]);
-      });
-
-      doc.autoTable({
-        startY: y,
-        head: [['#', 'Car Name', 'VIN', 'Price', 'B13 Info', 'Condition']],
-        body: rows,
-        styles: { fontSize: 10, cellPadding: 3 },
-        headStyles: { fillColor: [212, 175, 55], textColor: 255 },
-        theme: 'striped',
-        margin: { left: 10, right: 10 }
-      });
-
-      doc.save('bill_of_lading.pdf');
+      alert('This demo doesn\'t generate PDF yet. Add backend or use JS PDF libs.');
     });
   </script>
 </body>
