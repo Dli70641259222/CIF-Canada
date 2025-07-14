@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Car Shipping BOL Generator</title>
-  <script defer src="script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-6">
@@ -46,6 +46,8 @@
         <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded">Generate BOL PDF</button>
       </div>
     </form>
+
+    <div id="pdfContent" class="hidden bg-white p-6 text-sm"></div>
   </div>
 
   <script>
@@ -53,13 +55,11 @@
       const table = document.getElementById('carsTable').getElementsByTagName('tbody')[0];
       const newRow = table.insertRow();
       newRow.innerHTML = `
-        <tr>
-          <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
-          <td><input type="text" name="car_vin[]" class="border p-1 w-full"></td>
-          <td><input type="text" name="car_price[]" class="border p-1 w-full"></td>
-          <td><input type="text" name="car_condition[]" class="border p-1 w-full"></td>
-          <td><button type="button" onclick="removeRow(this)" class="text-red-600">Remove</button></td>
-        </tr>
+        <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
+        <td><input type="text" name="car_vin[]" class="border p-1 w-full"></td>
+        <td><input type="text" name="car_price[]" class="border p-1 w-full"></td>
+        <td><input type="text" name="car_condition[]" class="border p-1 w-full"></td>
+        <td><button type="button" onclick="removeRow(this)" class="text-red-600">Remove</button></td>
       `;
     }
 
@@ -70,7 +70,39 @@
 
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      alert('This demo doesn\'t generate PDF yet. Add backend or use JS PDF libs.');
+
+      const form = e.target;
+      const data = new FormData(form);
+
+      let html = `<h2 class='text-xl font-bold mb-2'>Bill of Lading</h2>`;
+      html += `<p><strong>Shipper:</strong> ${data.get('shipper')}</p>`;
+      html += `<p><strong>Consignee:</strong> ${data.get('consignee')}</p>`;
+      html += `<p><strong>Notify:</strong> ${data.get('notify')}</p>`;
+      html += `<p><strong>Port:</strong> ${data.get('port')}</p>`;
+      html += `<p><strong>Destination:</strong> ${data.get('destination')}</p>`;
+      html += `<p><strong>Container:</strong> ${data.get('container')}</p>`;
+      html += `<p><strong>Seal:</strong> ${data.get('seal')}</p>`;
+      html += `<p><strong>Weight:</strong> ${data.get('weight')} kg</p>`;
+
+      html += `<h3 class='mt-4 font-semibold'>Car Details</h3><table border='1' cellspacing='0' cellpadding='4' width='100%'>`;
+      html += `<tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
+
+      const cars = data.getAll('car_model[]');
+      for (let i = 0; i < cars.length; i++) {
+        html += `<tr>`;
+        html += `<td>${data.getAll('car_model[]')[i]}</td>`;
+        html += `<td>${data.getAll('car_vin[]')[i]}</td>`;
+        html += `<td>${data.getAll('car_price[]')[i]}</td>`;
+        html += `<td>${data.getAll('car_condition[]')[i]}</td>`;
+        html += `</tr>`;
+      }
+      html += `</table>`;
+
+      const pdfDiv = document.getElementById('pdfContent');
+      pdfDiv.innerHTML = html;
+      pdfDiv.classList.remove('hidden');
+
+      html2pdf().from(pdfDiv).set({ margin: 10, filename: 'BOL.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
     });
   </script>
 </body>
