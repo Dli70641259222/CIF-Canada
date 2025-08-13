@@ -6,6 +6,47 @@
   <title>Car Shipping BOL Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    /* PDF Styling */
+    #pdfContent {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      border: 2px solid black;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .section-title {
+      font-weight: bold;
+      background: #f0f0f0;
+      padding: 5px;
+      border: 1px solid black;
+      margin-top: 10px;
+    }
+    .note-box {
+      border: 1px solid black;
+      padding: 8px;
+      min-height: 40px;
+      background: #fafafa;
+      margin-bottom: 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th {
+      background: #e0e0e0;
+      padding: 6px;
+      font-weight: bold;
+      text-align: left;
+    }
+    td {
+      padding: 6px;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
@@ -25,9 +66,10 @@
         <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded">
         <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="2" class="border p-2 rounded"></textarea>
 
-        <!-- Other fields -->
-        <input type="text" name="port" placeholder="Port of Loading" class="border p-2 rounded">
+        <!-- Destination -->
         <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded">
+
+        <!-- Other fields -->
         <input type="text" name="container" placeholder="Container Size" class="border p-2 rounded">
         <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-2 rounded">
         <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-2 rounded">
@@ -57,7 +99,7 @@
       </div>
     </form>
 
-    <div id="pdfContent" class="hidden bg-white p-6 text-sm"></div>
+    <div id="pdfContent" class="hidden"></div>
   </div>
 
   <script>
@@ -82,22 +124,38 @@
 
       const data = new FormData(e.target);
 
-      let html = `<h2 class='text-xl font-bold mb-2'>Bill of Lading</h2>`;
-      html += `<p><strong>Shipper:</strong> ${data.get('shipper')}</p>`;
-      html += `<p><em>${data.get('shipper_notes') || ''}</em></p>`;
-      html += `<p><strong>Consignee:</strong> ${data.get('consignee')}</p>`;
-      html += `<p><em>${data.get('consignee_notes') || ''}</em></p>`;
-      html += `<p><strong>Notify:</strong> ${data.get('notify')}</p>`;
-      html += `<p><em>${data.get('notify_notes') || ''}</em></p>`;
-      html += `<p><strong>Port:</strong> ${data.get('port')}</p>`;
-      html += `<p><strong>Destination:</strong> ${data.get('destination')}</p>`;
-      html += `<p><strong>Container:</strong> ${data.get('container')}</p>`;
-      html += `<p><strong>Shipment Price:</strong> ${data.get('shipment_price')}</p>`;
-      html += `<p><strong>Shipping Line Company:</strong> ${data.get('shipping_line')}</p>`;
+      let html = `
+      <div id="pdfLayout">
+        <h2 style="text-align:center; font-size:18px; font-weight:bold;">BILL OF LADING</h2>
 
-      html += `<h3 class='mt-4 font-semibold'>Car Details</h3>
-               <table border='1' cellspacing='0' cellpadding='4' width='100%'>
-               <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
+        <div class="section-title">Shipper</div>
+        <div>${data.get('shipper')}</div>
+        <div class="note-box">${data.get('shipper_notes') || ''}</div>
+
+        <div class="section-title">Consignee</div>
+        <div>${data.get('consignee')}</div>
+        <div class="note-box">${data.get('consignee_notes') || ''}</div>
+
+        <div class="section-title">Notify Party</div>
+        <div>${data.get('notify')}</div>
+        <div class="note-box">${data.get('notify_notes') || ''}</div>
+
+        <div class="section-title">Final Destination</div>
+        <div>${data.get('destination')}</div>
+
+        <div class="section-title">Container Size</div>
+        <div>${data.get('container')}</div>
+
+        <div class="section-title">Shipment Price</div>
+        <div>${data.get('shipment_price')}</div>
+
+        <div class="section-title">Shipping Line Company</div>
+        <div>${data.get('shipping_line')}</div>
+
+        <h3 style="margin-top:15px; font-size:14px; font-weight:bold;">Car Details</h3>
+        <table>
+          <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>
+      `;
 
       const models = data.getAll('car_model[]');
       const vins = data.getAll('car_vin[]');
@@ -112,14 +170,14 @@
                   <td>${conditions[i]}</td>
                  </tr>`;
       }
-      html += `</table>`;
+      html += `</table></div>`;
 
       const pdfDiv = document.getElementById('pdfContent');
       pdfDiv.innerHTML = html;
       pdfDiv.classList.remove('hidden');
 
       html2pdf().from(pdfDiv).set({
-        margin: 10,
+        margin: 5,
         filename: 'BOL.pdf',
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
