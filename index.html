@@ -7,27 +7,35 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* PDF Styling */
+    /* PDF Layout */
     #pdfContent {
       font-family: Arial, sans-serif;
       padding: 20px;
-      border: 2px solid black;
       width: 100%;
       box-sizing: border-box;
+      border: 2px solid #0f172a;
+    }
+    .pdf-header {
+      background: #0f172a;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
     .section-title {
+      background: #1d4ed8;
+      color: white;
+      padding: 6px;
       font-weight: bold;
-      background: #f0f0f0;
-      padding: 5px;
-      border: 1px solid black;
-      margin-top: 10px;
+      margin-top: 12px;
     }
     .note-box {
-      border: 1px solid black;
+      border: 1px solid #ccc;
       padding: 8px;
       min-height: 40px;
-      background: #fafafa;
-      margin-bottom: 5px;
+      background: #f8fafc;
     }
     table {
       border-collapse: collapse;
@@ -35,16 +43,20 @@
       margin-top: 10px;
     }
     table, th, td {
-      border: 1px solid black;
+      border: 1px solid #ccc;
     }
     th {
-      background: #e0e0e0;
+      background: #1d4ed8;
+      color: white;
       padding: 6px;
       font-weight: bold;
       text-align: left;
     }
     td {
       padding: 6px;
+    }
+    tr:nth-child(even) {
+      background: #f1f5f9;
     }
   </style>
 </head>
@@ -126,7 +138,7 @@
 
       let html = `
       <div id="pdfLayout">
-        <h2 style="text-align:center; font-size:18px; font-weight:bold;">BILL OF LADING</h2>
+        <div class="pdf-header">BILL OF LADING</div>
 
         <div class="section-title">Shipper</div>
         <div>${data.get('shipper')}</div>
@@ -152,7 +164,7 @@
         <div class="section-title">Shipping Line Company</div>
         <div>${data.get('shipping_line')}</div>
 
-        <h3 style="margin-top:15px; font-size:14px; font-weight:bold;">Car Details</h3>
+        <div class="section-title">Car Details</div>
         <table>
           <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>
       `;
