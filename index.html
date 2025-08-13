@@ -16,10 +16,11 @@
         <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded" required>
         <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded" required>
         <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded">
+        <textarea name="notes" placeholder="Notes" rows="3" class="border p-2 rounded col-span-2"></textarea>
         <input type="text" name="port" placeholder="Port of Loading" class="border p-2 rounded">
         <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded">
         <input type="text" name="container" placeholder="Container Number" class="border p-2 rounded">
-        <input type="text" name="seal" placeholder="Seal Number" class="border p-2 rounded">
+        <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-2 rounded">
         <input type="text" name="weight" placeholder="Weight (kg)" class="border p-2 rounded">
       </div>
 
@@ -64,37 +65,41 @@
     }
 
     function removeRow(btn) {
-      const row = btn.closest('tr');
-      row.remove();
+      btn.closest('tr').remove();
     }
 
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
-      const form = e.target;
-      const data = new FormData(form);
+      const data = new FormData(e.target);
 
       let html = `<h2 class='text-xl font-bold mb-2'>Bill of Lading</h2>`;
       html += `<p><strong>Shipper:</strong> ${data.get('shipper')}</p>`;
       html += `<p><strong>Consignee:</strong> ${data.get('consignee')}</p>`;
       html += `<p><strong>Notify:</strong> ${data.get('notify')}</p>`;
+      html += `<p><strong>Notes:</strong> ${data.get('notes') || ''}</p>`;
       html += `<p><strong>Port:</strong> ${data.get('port')}</p>`;
       html += `<p><strong>Destination:</strong> ${data.get('destination')}</p>`;
       html += `<p><strong>Container:</strong> ${data.get('container')}</p>`;
-      html += `<p><strong>Seal:</strong> ${data.get('seal')}</p>`;
+      html += `<p><strong>Shipment Price:</strong> ${data.get('shipment_price')}</p>`;
       html += `<p><strong>Weight:</strong> ${data.get('weight')} kg</p>`;
 
-      html += `<h3 class='mt-4 font-semibold'>Car Details</h3><table border='1' cellspacing='0' cellpadding='4' width='100%'>`;
-      html += `<tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
+      html += `<h3 class='mt-4 font-semibold'>Car Details</h3>
+               <table border='1' cellspacing='0' cellpadding='4' width='100%'>
+               <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
 
-      const cars = data.getAll('car_model[]');
-      for (let i = 0; i < cars.length; i++) {
-        html += `<tr>`;
-        html += `<td>${data.getAll('car_model[]')[i]}</td>`;
-        html += `<td>${data.getAll('car_vin[]')[i]}</td>`;
-        html += `<td>${data.getAll('car_price[]')[i]}</td>`;
-        html += `<td>${data.getAll('car_condition[]')[i]}</td>`;
-        html += `</tr>`;
+      const models = data.getAll('car_model[]');
+      const vins = data.getAll('car_vin[]');
+      const prices = data.getAll('car_price[]');
+      const conditions = data.getAll('car_condition[]');
+
+      for (let i = 0; i < models.length; i++) {
+        html += `<tr>
+                  <td>${models[i]}</td>
+                  <td>${vins[i]}</td>
+                  <td>${prices[i]}</td>
+                  <td>${conditions[i]}</td>
+                 </tr>`;
       }
       html += `</table>`;
 
@@ -102,7 +107,12 @@
       pdfDiv.innerHTML = html;
       pdfDiv.classList.remove('hidden');
 
-      html2pdf().from(pdfDiv).set({ margin: 10, filename: 'BOL.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
+      html2pdf().from(pdfDiv).set({
+        margin: 10,
+        filename: 'BOL.pdf',
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).save();
     });
   </script>
 </body>
