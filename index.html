@@ -7,18 +7,27 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
+    /* Ensure A4 size for PDF */
     #pdfContent {
       width: 210mm;
       min-height: 297mm;
       padding: 10mm;
       background: white;
+      overflow: visible !important;
     }
-    .pdf-section {
-      border: 1px solid #ccc;
-      padding: 8px;
-      background: #f9f9f9;
-      min-height: 100px;
+    /* Preserve line breaks in PDF */
+    .preserve-lines {
+      white-space: pre-wrap;
     }
+    /* Avoid page breaks in boxes/tables */
+    .pdf-section, table {
+      page-break-inside: avoid;
+    }
+    /* Fix Tailwind box sizing for PDF */
+    #pdfContent * {
+      box-sizing: border-box;
+    }
+    /* Table styling */
     table, th, td {
       border: 1px solid #ccc;
       border-collapse: collapse;
@@ -29,8 +38,11 @@
     th {
       background: #e5e7eb;
     }
-    .preserve-lines {
-      white-space: pre-wrap; /* preserve line breaks */
+    .pdf-section {
+      border: 1px solid #ccc;
+      padding: 8px;
+      background: #f9f9f9;
+      min-height: 100px;
     }
   </style>
 </head>
@@ -131,7 +143,7 @@
         const value = el.value || '';
         const div = document.createElement('div');
         div.textContent = value;
-        div.className = "mt-1 preserve-lines"; // preserve line breaks
+        div.className = "mt-1 preserve-lines";
         el.replaceWith(div);
       });
       clone.querySelectorAll('button').forEach(btn => btn.remove());
@@ -141,11 +153,13 @@
       pdfDiv.appendChild(clone);
       pdfDiv.classList.remove('hidden');
 
+      // Generate PDF without cutting
       html2pdf().from(pdfDiv).set({
         margin: 10,
         filename: 'BOL.pdf',
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas: { scale: 2, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid', 'css', 'legacy'] }
       }).save();
     });
   </script>
