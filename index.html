@@ -19,6 +19,7 @@
       border: 1px solid #ccc;
       padding: 8px;
       background: #f9f9f9;
+      min-height: 100px; /* Taller height for Shipper, Consignee, Notify */
     }
     table {
       border-collapse: collapse;
@@ -49,21 +50,21 @@
         <div class="pdf-section">
           <strong>Shipper</strong>
           <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded w-full mt-1" required>
-          <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="2" class="border p-2 rounded w-full mt-2"></textarea>
+          <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
         </div>
 
         <!-- Consignee -->
         <div class="pdf-section">
           <strong>Consignee</strong>
           <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded w-full mt-1" required>
-          <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="2" class="border p-2 rounded w-full mt-2"></textarea>
+          <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
         </div>
 
         <!-- Notify -->
         <div class="pdf-section">
           <strong>Notify Party</strong>
           <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded w-full mt-1">
-          <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="2" class="border p-2 rounded w-full mt-2"></textarea>
+          <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
         </div>
 
         <!-- Destination -->
@@ -139,28 +140,19 @@
       e.preventDefault();
       const data = new FormData(e.target);
 
-      // Build PDF content with same structure
-      let html = `<div id="pdfContentInner">
-        <h2 style="text-align:center; font-size:20px; font-weight:bold;">Bill of Lading</h2>
+      let html = `<div id="pdfLayout">
+        <h2 style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">Bill of Lading</h2>
         <div class="grid grid-cols-2 gap-4">`;
 
-      // Shipper
       html += `<div class="pdf-section"><strong>Shipper</strong><div>${data.get('shipper')}</div><div>${data.get('shipper_notes') || ''}</div></div>`;
-      // Consignee
       html += `<div class="pdf-section"><strong>Consignee</strong><div>${data.get('consignee')}</div><div>${data.get('consignee_notes') || ''}</div></div>`;
-      // Notify
       html += `<div class="pdf-section"><strong>Notify Party</strong><div>${data.get('notify')}</div><div>${data.get('notify_notes') || ''}</div></div>`;
-      // Destination
       html += `<div class="pdf-section"><strong>Final Destination</strong><div>${data.get('destination')}</div></div>`;
-      // Container
       html += `<div class="pdf-section"><strong>Container Size</strong><div>${data.get('container')}</div></div>`;
-      // Shipment Price
       html += `<div class="pdf-section"><strong>Shipment Price</strong><div>${data.get('shipment_price')}</div></div>`;
-      // Shipping Line
       html += `<div class="pdf-section"><strong>Shipping Line Company</strong><div>${data.get('shipping_line')}</div></div>`;
-      html += `</div>`; // end grid
+      html += `</div>`;
 
-      // Car table
       html += `<h3 style="margin-top:15px;">Car Details</h3>
       <table>
         <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
@@ -178,13 +170,12 @@
       }
       html += `</table></div>`;
 
-      // Render PDF
       const pdfDiv = document.getElementById('pdfContent');
       pdfDiv.innerHTML = html;
       pdfDiv.classList.remove('hidden');
 
       html2pdf().from(pdfDiv).set({
-        margin: 5,
+        margin: 10,
         filename: 'BOL.pdf',
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
