@@ -7,35 +7,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* PDF Layout */
+    /* PDF-specific styling */
     #pdfContent {
       font-family: Arial, sans-serif;
       padding: 20px;
       width: 100%;
       box-sizing: border-box;
-      border: 2px solid #0f172a;
+      border: 2px solid #000;
     }
-    .pdf-header {
-      background: #0f172a;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-    .section-title {
-      background: #1d4ed8;
-      color: white;
-      padding: 6px;
-      font-weight: bold;
-      margin-top: 12px;
-    }
-    .note-box {
+    .pdf-section {
       border: 1px solid #ccc;
       padding: 8px;
-      min-height: 40px;
-      background: #f8fafc;
+      background: #f9f9f9;
     }
     table {
       border-collapse: collapse;
@@ -46,17 +29,13 @@
       border: 1px solid #ccc;
     }
     th {
-      background: #1d4ed8;
-      color: white;
+      background: #e5e7eb;
       padding: 6px;
       font-weight: bold;
       text-align: left;
     }
     td {
       padding: 6px;
-    }
-    tr:nth-child(even) {
-      background: #f1f5f9;
     }
   </style>
 </head>
@@ -67,30 +46,55 @@
     <form id="bolForm" class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <!-- Shipper -->
-        <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded" required>
-        <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="2" class="border p-2 rounded"></textarea>
+        <div class="pdf-section">
+          <strong>Shipper</strong>
+          <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded w-full mt-1" required>
+          <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="2" class="border p-2 rounded w-full mt-2"></textarea>
+        </div>
 
         <!-- Consignee -->
-        <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded" required>
-        <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="2" class="border p-2 rounded"></textarea>
+        <div class="pdf-section">
+          <strong>Consignee</strong>
+          <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded w-full mt-1" required>
+          <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="2" class="border p-2 rounded w-full mt-2"></textarea>
+        </div>
 
         <!-- Notify -->
-        <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded">
-        <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="2" class="border p-2 rounded"></textarea>
+        <div class="pdf-section">
+          <strong>Notify Party</strong>
+          <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded w-full mt-1">
+          <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="2" class="border p-2 rounded w-full mt-2"></textarea>
+        </div>
 
         <!-- Destination -->
-        <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded">
+        <div class="pdf-section">
+          <strong>Final Destination</strong>
+          <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded w-full mt-1">
+        </div>
 
-        <!-- Other fields -->
-        <input type="text" name="container" placeholder="Container Size" class="border p-2 rounded">
-        <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-2 rounded">
-        <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-2 rounded">
+        <!-- Container -->
+        <div class="pdf-section">
+          <strong>Container Size</strong>
+          <input type="text" name="container" placeholder="Container Size" class="border p-2 rounded w-full mt-1">
+        </div>
+
+        <!-- Shipment Price -->
+        <div class="pdf-section">
+          <strong>Shipment Price</strong>
+          <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-2 rounded w-full mt-1">
+        </div>
+
+        <!-- Shipping Line -->
+        <div class="pdf-section">
+          <strong>Shipping Line Company</strong>
+          <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-2 rounded w-full mt-1">
+        </div>
       </div>
 
       <h2 class="text-lg font-semibold mt-6">Cars</h2>
       <table id="carsTable" class="w-full text-sm table-auto border">
         <thead>
-          <tr class="bg-gray-200">
+          <tr>
             <th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th><th></th>
           </tr>
         </thead>
@@ -133,57 +137,48 @@
 
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
-
       const data = new FormData(e.target);
 
-      let html = `
-      <div id="pdfLayout">
-        <div class="pdf-header">BILL OF LADING</div>
+      // Build PDF content with same structure
+      let html = `<div id="pdfContentInner">
+        <h2 style="text-align:center; font-size:20px; font-weight:bold;">Bill of Lading</h2>
+        <div class="grid grid-cols-2 gap-4">`;
 
-        <div class="section-title">Shipper</div>
-        <div>${data.get('shipper')}</div>
-        <div class="note-box">${data.get('shipper_notes') || ''}</div>
+      // Shipper
+      html += `<div class="pdf-section"><strong>Shipper</strong><div>${data.get('shipper')}</div><div>${data.get('shipper_notes') || ''}</div></div>`;
+      // Consignee
+      html += `<div class="pdf-section"><strong>Consignee</strong><div>${data.get('consignee')}</div><div>${data.get('consignee_notes') || ''}</div></div>`;
+      // Notify
+      html += `<div class="pdf-section"><strong>Notify Party</strong><div>${data.get('notify')}</div><div>${data.get('notify_notes') || ''}</div></div>`;
+      // Destination
+      html += `<div class="pdf-section"><strong>Final Destination</strong><div>${data.get('destination')}</div></div>`;
+      // Container
+      html += `<div class="pdf-section"><strong>Container Size</strong><div>${data.get('container')}</div></div>`;
+      // Shipment Price
+      html += `<div class="pdf-section"><strong>Shipment Price</strong><div>${data.get('shipment_price')}</div></div>`;
+      // Shipping Line
+      html += `<div class="pdf-section"><strong>Shipping Line Company</strong><div>${data.get('shipping_line')}</div></div>`;
+      html += `</div>`; // end grid
 
-        <div class="section-title">Consignee</div>
-        <div>${data.get('consignee')}</div>
-        <div class="note-box">${data.get('consignee_notes') || ''}</div>
-
-        <div class="section-title">Notify Party</div>
-        <div>${data.get('notify')}</div>
-        <div class="note-box">${data.get('notify_notes') || ''}</div>
-
-        <div class="section-title">Final Destination</div>
-        <div>${data.get('destination')}</div>
-
-        <div class="section-title">Container Size</div>
-        <div>${data.get('container')}</div>
-
-        <div class="section-title">Shipment Price</div>
-        <div>${data.get('shipment_price')}</div>
-
-        <div class="section-title">Shipping Line Company</div>
-        <div>${data.get('shipping_line')}</div>
-
-        <div class="section-title">Car Details</div>
-        <table>
-          <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>
-      `;
-
+      // Car table
+      html += `<h3 style="margin-top:15px;">Car Details</h3>
+      <table>
+        <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
       const models = data.getAll('car_model[]');
       const vins = data.getAll('car_vin[]');
       const prices = data.getAll('car_price[]');
       const conditions = data.getAll('car_condition[]');
-
       for (let i = 0; i < models.length; i++) {
         html += `<tr>
-                  <td>${models[i]}</td>
-                  <td>${vins[i]}</td>
-                  <td>${prices[i]}</td>
-                  <td>${conditions[i]}</td>
-                 </tr>`;
+          <td>${models[i]}</td>
+          <td>${vins[i]}</td>
+          <td>${prices[i]}</td>
+          <td>${conditions[i]}</td>
+        </tr>`;
       }
       html += `</table></div>`;
 
+      // Render PDF
       const pdfDiv = document.getElementById('pdfContent');
       pdfDiv.innerHTML = html;
       pdfDiv.classList.remove('hidden');
