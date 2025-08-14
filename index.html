@@ -7,7 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* Ensure A4 size for PDF */
+    /* A4 PDF size and style */
     #pdfContent {
       width: 210mm;
       min-height: 297mm;
@@ -15,15 +15,14 @@
       background: white;
       overflow: visible !important;
     }
-    /* Preserve line breaks in PDF */
+    /* Preserve line breaks */
     .preserve-lines {
       white-space: pre-wrap;
     }
-    /* Avoid page breaks in boxes/tables */
-    .pdf-section, table {
-      page-break-inside: avoid;
+    /* Avoid cutting frames */
+    .pdf-section, table, tr {
+      page-break-inside: avoid !important;
     }
-    /* Fix Tailwind box sizing for PDF */
     #pdfContent * {
       box-sizing: border-box;
     }
@@ -138,6 +137,7 @@
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
+      // Clone form structure for PDF
       const clone = e.target.cloneNode(true);
       clone.querySelectorAll('input, textarea').forEach(el => {
         const value = el.value || '';
@@ -153,14 +153,14 @@
       pdfDiv.appendChild(clone);
       pdfDiv.classList.remove('hidden');
 
-      // Generate PDF without cutting
-      html2pdf().from(pdfDiv).set({
+      // Generate PDF with page break rules
+      html2pdf().set({
         margin: 10,
         filename: 'BOL.pdf',
         html2canvas: { scale: 2, scrollY: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid', 'css', 'legacy'] }
-      }).save();
+      }).from(pdfDiv).save();
     });
   </script>
 </body>
