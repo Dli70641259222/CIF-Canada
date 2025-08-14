@@ -7,12 +7,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* Make sure PDF looks good on A4 */
     #pdfContent {
       width: 210mm;
       min-height: 297mm;
       padding: 10mm;
-      box-sizing: border-box;
       background: white;
     }
     .pdf-section {
@@ -31,6 +29,9 @@
     th {
       background: #e5e7eb;
     }
+    .preserve-lines {
+      white-space: pre-wrap; /* preserve line breaks */
+    }
   </style>
 </head>
 <body class="bg-gray-100 p-6">
@@ -39,46 +40,39 @@
 
     <form id="bolForm" class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
-        <!-- Shipper -->
         <div class="pdf-section">
           <strong>Shipper</strong>
           <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded w-full mt-1" required>
           <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
         </div>
 
-        <!-- Consignee -->
         <div class="pdf-section">
           <strong>Consignee</strong>
           <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded w-full mt-1" required>
           <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
         </div>
 
-        <!-- Notify -->
         <div class="pdf-section">
           <strong>Notify Party</strong>
           <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded w-full mt-1">
           <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
         </div>
 
-        <!-- Destination -->
         <div class="pdf-section">
           <strong>Final Destination</strong>
           <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded w-full mt-1">
         </div>
 
-        <!-- Container -->
         <div class="pdf-section">
           <strong>Container Size</strong>
           <input type="text" name="container" placeholder="Container Size" class="border p-2 rounded w-full mt-1">
         </div>
 
-        <!-- Shipment Price -->
         <div class="pdf-section">
           <strong>Shipment Price</strong>
           <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-2 rounded w-full mt-1">
         </div>
 
-        <!-- Shipping Line -->
         <div class="pdf-section">
           <strong>Shipping Line Company</strong>
           <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-2 rounded w-full mt-1">
@@ -132,24 +126,21 @@
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
-      // Clone the form layout but replace inputs/textareas with text
       const clone = e.target.cloneNode(true);
       clone.querySelectorAll('input, textarea').forEach(el => {
         const value = el.value || '';
         const div = document.createElement('div');
         div.textContent = value;
-        div.className = "mt-1";
+        div.className = "mt-1 preserve-lines"; // preserve line breaks
         el.replaceWith(div);
       });
       clone.querySelectorAll('button').forEach(btn => btn.remove());
 
-      // Put into PDF container
       const pdfDiv = document.getElementById('pdfContent');
       pdfDiv.innerHTML = '';
       pdfDiv.appendChild(clone);
       pdfDiv.classList.remove('hidden');
 
-      // Generate A4 PDF
       html2pdf().from(pdfDiv).set({
         margin: 10,
         filename: 'BOL.pdf',
