@@ -7,90 +7,107 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* A4 PDF size and style */
+    /* Ensure A4 size for PDF */
     #pdfContent {
       width: 210mm;
       min-height: 297mm;
-      padding: 10mm;
+      padding: 8mm;
       background: white;
+      font-size: 10px;
+      line-height: 1.2;
       overflow: visible !important;
     }
-    /* Preserve line breaks */
+
     .preserve-lines {
       white-space: pre-wrap;
     }
-    /* Avoid cutting frames */
-    .pdf-section, table, tr {
-      page-break-inside: avoid !important;
+
+    .pdf-section, table {
+      page-break-inside: avoid;
+      font-size: 10px;
     }
+
     #pdfContent * {
       box-sizing: border-box;
     }
-    /* Table styling */
+
     table, th, td {
       border: 1px solid #ccc;
       border-collapse: collapse;
+      font-size: 10px;
     }
+
     th, td {
-      padding: 6px;
+      padding: 4px;
     }
+
     th {
       background: #e5e7eb;
     }
+
     .pdf-section {
       border: 1px solid #ccc;
-      padding: 8px;
+      padding: 6px;
       background: #f9f9f9;
-      min-height: 100px;
+      min-height: 80px;
+      font-size: 10px;
+    }
+
+    input, textarea {
+      font-size: 10px;
+    }
+
+    button {
+      font-size: 10px;
     }
   </style>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6">
-    <h1 class="text-2xl font-bold mb-4 text-center">Car Shipping - Bill of Lading Generator</h1>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-4">
+    <h1 class="text-xl font-bold mb-4 text-center">Car Shipping - Bill of Lading Generator</h1>
 
-    <form id="bolForm" class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
+    <form id="bolForm" class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
         <div class="pdf-section">
           <strong>Shipper</strong>
-          <input type="text" name="shipper" placeholder="Shipper Name" class="border p-2 rounded w-full mt-1" required>
-          <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
+          <input type="text" name="shipper" placeholder="Shipper Name" class="border p-1 rounded w-full mt-1" required>
+          <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
         </div>
 
         <div class="pdf-section">
           <strong>Consignee</strong>
-          <input type="text" name="consignee" placeholder="Consignee Name" class="border p-2 rounded w-full mt-1" required>
-          <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
+          <input type="text" name="consignee" placeholder="Consignee Name" class="border p-1 rounded w-full mt-1" required>
+          <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
         </div>
 
         <div class="pdf-section">
           <strong>Notify Party</strong>
-          <input type="text" name="notify" placeholder="Notify Party" class="border p-2 rounded w-full mt-1">
-          <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="4" class="border p-2 rounded w-full mt-2"></textarea>
+          <input type="text" name="notify" placeholder="Notify Party" class="border p-1 rounded w-full mt-1">
+          <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
         </div>
 
         <div class="pdf-section">
           <strong>Final Destination</strong>
-          <input type="text" name="destination" placeholder="Final Destination" class="border p-2 rounded w-full mt-1">
+          <input type="text" name="destination" placeholder="Final Destination" class="border p-1 rounded w-full mt-1">
         </div>
 
         <div class="pdf-section">
           <strong>Container Size</strong>
-          <input type="text" name="container" placeholder="Container Size" class="border p-2 rounded w-full mt-1">
+          <input type="text" name="container" placeholder="Container Size" class="border p-1 rounded w-full mt-1">
         </div>
 
         <div class="pdf-section">
           <strong>Shipment Price</strong>
-          <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-2 rounded w-full mt-1">
+          <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-1 rounded w-full mt-1">
         </div>
 
         <div class="pdf-section">
           <strong>Shipping Line Company</strong>
-          <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-2 rounded w-full mt-1">
+          <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-1 rounded w-full mt-1">
         </div>
       </div>
 
-      <h2 class="text-lg font-semibold mt-6">Cars</h2>
+      <h2 class="text-sm font-semibold mt-4">Cars</h2>
       <table id="carsTable" class="w-full text-sm table-auto">
         <thead>
           <tr>
@@ -107,10 +124,10 @@
           </tr>
         </tbody>
       </table>
-      <button type="button" onclick="addRow()" class="bg-blue-600 text-white px-4 py-2 rounded">+ Add Car</button>
+      <button type="button" onclick="addRow()" class="bg-blue-600 text-white px-3 py-1 rounded mt-1">+ Add Car</button>
 
-      <div class="text-center mt-6">
-        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded">Generate BOL PDF</button>
+      <div class="text-center mt-4">
+        <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded">Generate BOL PDF</button>
       </div>
     </form>
 
@@ -137,7 +154,6 @@
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
-      // Clone form structure for PDF
       const clone = e.target.cloneNode(true);
       clone.querySelectorAll('input, textarea').forEach(el => {
         const value = el.value || '';
@@ -153,14 +169,13 @@
       pdfDiv.appendChild(clone);
       pdfDiv.classList.remove('hidden');
 
-      // Generate PDF with page break rules
-      html2pdf().set({
-        margin: 10,
+      html2pdf().from(pdfDiv).set({
+        margin: 8,
         filename: 'BOL.pdf',
         html2canvas: { scale: 2, scrollY: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid', 'css', 'legacy'] }
-      }).from(pdfDiv).save();
+      }).save();
     });
   </script>
 </body>
