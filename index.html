@@ -7,36 +7,29 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* PDF-specific styling */
+    /* Make sure PDF looks good on A4 */
     #pdfContent {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      width: 100%;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 10mm;
       box-sizing: border-box;
-      border: 2px solid #000;
+      background: white;
     }
     .pdf-section {
       border: 1px solid #ccc;
       padding: 8px;
       background: #f9f9f9;
-      min-height: 100px; /* Taller height for Shipper, Consignee, Notify */
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 10px;
+      min-height: 100px;
     }
     table, th, td {
       border: 1px solid #ccc;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 6px;
     }
     th {
       background: #e5e7eb;
-      padding: 6px;
-      font-weight: bold;
-      text-align: left;
-    }
-    td {
-      padding: 6px;
     }
   </style>
 </head>
@@ -93,7 +86,7 @@
       </div>
 
       <h2 class="text-lg font-semibold mt-6">Cars</h2>
-      <table id="carsTable" class="w-full text-sm table-auto border">
+      <table id="carsTable" class="w-full text-sm table-auto">
         <thead>
           <tr>
             <th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th><th></th>
@@ -138,42 +131,25 @@
 
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      const data = new FormData(e.target);
 
-      let html = `<div id="pdfLayout">
-        <h2 style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">Bill of Lading</h2>
-        <div class="grid grid-cols-2 gap-4">`;
+      // Clone the form layout but replace inputs/textareas with text
+      const clone = e.target.cloneNode(true);
+      clone.querySelectorAll('input, textarea').forEach(el => {
+        const value = el.value || '';
+        const div = document.createElement('div');
+        div.textContent = value;
+        div.className = "mt-1";
+        el.replaceWith(div);
+      });
+      clone.querySelectorAll('button').forEach(btn => btn.remove());
 
-      html += `<div class="pdf-section"><strong>Shipper</strong><div>${data.get('shipper')}</div><div>${data.get('shipper_notes') || ''}</div></div>`;
-      html += `<div class="pdf-section"><strong>Consignee</strong><div>${data.get('consignee')}</div><div>${data.get('consignee_notes') || ''}</div></div>`;
-      html += `<div class="pdf-section"><strong>Notify Party</strong><div>${data.get('notify')}</div><div>${data.get('notify_notes') || ''}</div></div>`;
-      html += `<div class="pdf-section"><strong>Final Destination</strong><div>${data.get('destination')}</div></div>`;
-      html += `<div class="pdf-section"><strong>Container Size</strong><div>${data.get('container')}</div></div>`;
-      html += `<div class="pdf-section"><strong>Shipment Price</strong><div>${data.get('shipment_price')}</div></div>`;
-      html += `<div class="pdf-section"><strong>Shipping Line Company</strong><div>${data.get('shipping_line')}</div></div>`;
-      html += `</div>`;
-
-      html += `<h3 style="margin-top:15px;">Car Details</h3>
-      <table>
-        <tr><th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th></tr>`;
-      const models = data.getAll('car_model[]');
-      const vins = data.getAll('car_vin[]');
-      const prices = data.getAll('car_price[]');
-      const conditions = data.getAll('car_condition[]');
-      for (let i = 0; i < models.length; i++) {
-        html += `<tr>
-          <td>${models[i]}</td>
-          <td>${vins[i]}</td>
-          <td>${prices[i]}</td>
-          <td>${conditions[i]}</td>
-        </tr>`;
-      }
-      html += `</table></div>`;
-
+      // Put into PDF container
       const pdfDiv = document.getElementById('pdfContent');
-      pdfDiv.innerHTML = html;
+      pdfDiv.innerHTML = '';
+      pdfDiv.appendChild(clone);
       pdfDiv.classList.remove('hidden');
 
+      // Generate A4 PDF
       html2pdf().from(pdfDiv).set({
         margin: 10,
         filename: 'BOL.pdf',
