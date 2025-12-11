@@ -7,7 +7,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* Ensure A4 size for PDF */
     #pdfContent {
       width: 210mm;
       min-height: 297mm;
@@ -17,34 +16,12 @@
       line-height: 1.2;
       overflow: visible !important;
     }
-
-    .preserve-lines {
-      white-space: pre-wrap;
-    }
-
-    .pdf-section, table {
-      page-break-inside: avoid;
-      font-size: 10px;
-    }
-
-    #pdfContent * {
-      box-sizing: border-box;
-    }
-
-    table, th, td {
-      border: 1px solid #ccc;
-      border-collapse: collapse;
-      font-size: 10px;
-    }
-
-    th, td {
-      padding: 4px;
-    }
-
-    th {
-      background: #e5e7eb;
-    }
-
+    .preserve-lines { white-space: pre-wrap; }
+    .pdf-section, table { page-break-inside: avoid; font-size: 10px; }
+    #pdfContent * { box-sizing: border-box; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; font-size: 10px; }
+    th, td { padding: 4px; }
+    th { background: #e5e7eb; }
     .pdf-section {
       border: 1px solid #ccc;
       padding: 6px;
@@ -52,22 +29,20 @@
       min-height: 80px;
       font-size: 10px;
     }
-
-    input, textarea {
-      font-size: 10px;
-    }
-
-    button {
-      font-size: 10px;
-    }
+    input, textarea { font-size: 10px; }
+    button { font-size: 10px; }
   </style>
 </head>
+
 <body class="bg-gray-100 p-4">
   <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-4">
+
     <h1 class="text-xl font-bold mb-4 text-center">Car Shipping - Bill of Lading Generator</h1>
 
     <form id="bolForm" class="space-y-3">
+
       <div class="grid grid-cols-2 gap-3">
+
         <div class="pdf-section">
           <strong>Shipper</strong>
           <input type="text" name="shipper" placeholder="Shipper Name" class="border p-1 rounded w-full mt-1" required>
@@ -85,6 +60,14 @@
           <input type="text" name="notify" placeholder="Notify Party" class="border p-1 rounded w-full mt-1">
           <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
         </div>
+
+        <!-- ⭐ NEW TRANSIT SECTION -->
+        <div class="pdf-section">
+          <strong>Transit</strong>
+          <input type="text" name="transit" placeholder="Transit" class="border p-1 rounded w-full mt-1">
+          <textarea name="transit_notes" placeholder="Transit Notes" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
+        </div>
+        <!-- ⭐ END TRANSIT SECTION -->
 
         <div class="pdf-section">
           <strong>Final Destination</strong>
@@ -105,9 +88,11 @@
           <strong>Shipping Line Company</strong>
           <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-1 rounded w-full mt-1">
         </div>
+
       </div>
 
       <h2 class="text-sm font-semibold mt-4">Cars</h2>
+
       <table id="carsTable" class="w-full text-sm table-auto">
         <thead>
           <tr>
@@ -124,11 +109,13 @@
           </tr>
         </tbody>
       </table>
+
       <button type="button" onclick="addRow()" class="bg-blue-600 text-white px-3 py-1 rounded mt-1">+ Add Car</button>
 
       <div class="text-center mt-4">
         <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded">Generate BOL PDF</button>
       </div>
+
     </form>
 
     <div id="pdfContent" class="hidden"></div>
@@ -155,6 +142,7 @@
       e.preventDefault();
 
       const clone = e.target.cloneNode(true);
+
       clone.querySelectorAll('input, textarea').forEach(el => {
         const value = el.value || '';
         const div = document.createElement('div');
@@ -162,6 +150,7 @@
         div.className = "mt-1 preserve-lines";
         el.replaceWith(div);
       });
+
       clone.querySelectorAll('button').forEach(btn => btn.remove());
 
       const pdfDiv = document.getElementById('pdfContent');
@@ -178,5 +167,6 @@
       }).save();
     });
   </script>
+
 </body>
 </html>
