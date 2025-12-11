@@ -6,6 +6,7 @@
   <title>Car Shipping BOL Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
   <style>
     #pdfContent {
       width: 210mm;
@@ -29,7 +30,7 @@
       min-height: 80px;
       font-size: 10px;
     }
-    input, textarea { font-size: 10px; }
+    input, textarea, select { font-size: 10px; }
     button { font-size: 10px; }
   </style>
 </head>
@@ -61,11 +62,19 @@
           <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
         </div>
 
-        <!-- ⭐ NEW TRANSIT SECTION -->
+        <!-- ⭐ UPDATED TRANSIT SECTION WITH OPTIONS -->
         <div class="pdf-section">
           <strong>Transit</strong>
-          <input type="text" name="transit" placeholder="Transit" class="border p-1 rounded w-full mt-1">
-          <textarea name="transit_notes" placeholder="Transit Notes" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
+
+          <select name="transit" class="border p-1 rounded w-full mt-1">
+            <option value=""></option>
+            <option value="Burkina Faso">Burkina Faso</option>
+            <option value="Niger">Niger</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <textarea name="transit_notes" placeholder="Transit Notes" rows="3"
+                    class="border p-1 rounded w-full mt-1"></textarea>
         </div>
         <!-- ⭐ END TRANSIT SECTION -->
 
@@ -96,9 +105,14 @@
       <table id="carsTable" class="w-full text-sm table-auto">
         <thead>
           <tr>
-            <th>Make/Model</th><th>VIN</th><th>Price</th><th>Condition</th><th></th>
+            <th>Make/Model</th>
+            <th>VIN</th>
+            <th>Price</th>
+            <th>Condition</th>
+            <th></th>
           </tr>
         </thead>
+
         <tbody>
           <tr>
             <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
@@ -119,6 +133,7 @@
     </form>
 
     <div id="pdfContent" class="hidden"></div>
+
   </div>
 
   <script>
@@ -143,7 +158,7 @@
 
       const clone = e.target.cloneNode(true);
 
-      clone.querySelectorAll('input, textarea').forEach(el => {
+      clone.querySelectorAll('input, textarea, select').forEach(el => {
         const value = el.value || '';
         const div = document.createElement('div');
         div.textContent = value;
