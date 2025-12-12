@@ -4,135 +4,413 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Car Shipping BOL Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
+  
   <style>
-    #pdfContent {
-      width: 210mm;
-      min-height: 297mm;
-      padding: 8mm;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .form-input {
+      transition: all 0.3s ease;
+      border: 2px solid #e5e7eb;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    
+    .section-card {
       background: white;
-      font-size: 10px;
-      line-height: 1.2;
-      overflow: visible !important;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
     }
-    .preserve-lines { white-space: pre-wrap; }
-    .pdf-section, table { page-break-inside: avoid; font-size: 10px; }
-    #pdfContent * { box-sizing: border-box; }
-    table, th, td { border: 1px solid #ccc; border-collapse: collapse; font-size: 10px; }
-    th, td { padding: 4px; }
-    th { background: #e5e7eb; }
+    
+    .section-card:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* PDF Styles */
+    #pdfContent {
+      width: 190mm;
+      background: white;
+      font-size: 9px;
+      line-height: 1.4;
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+    
+    .pdf-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    
     .pdf-section {
-      border: 1px solid #ccc;
-      padding: 6px;
-      background: #f9f9f9;
-      min-height: 80px;
-      font-size: 10px;
+      border: 1.5px solid #e5e7eb;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      page-break-inside: avoid;
+      min-height: 48px;
+      transition: all 0.2s;
     }
-    input, textarea, select { font-size: 10px; }
-    button { font-size: 10px; }
+    
+    .pdf-section:hover {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pdf-section-title {
+      font-weight: 700;
+      color: #667eea;
+      font-size: 8px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #e0e7ff;
+      padding-bottom: 3px;
+    }
+    
+    .pdf-content {
+      color: #374151;
+      margin-top: 4px;
+      white-space: pre-wrap;
+      font-size: 8px;
+      line-height: 1.4;
+      user-select: text;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+    }
+    
+    .pdf-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 8px;
+      page-break-inside: avoid;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pdf-table th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 8px 6px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 8px;
+      border: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    
+    .pdf-table td {
+      border: 1px solid #e5e7eb;
+      padding: 6px;
+      font-size: 8px;
+      line-height: 1.3;
+      vertical-align: top;
+      background: white;
+      user-select: text;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+    }
+    
+    .pdf-table tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    
+    .pdf-table tr:hover td {
+      background: #f3f4f6;
+    }
+    
+    .pdf-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    
+    .pdf-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    
+    .section-banner {
+      background: linear-gradient(to right, #e0e7ff, #f3f4f6);
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin: 10px 0 8px 0;
+      border-left: 4px solid #667eea;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .bol-badge {
+      background: white;
+      color: #667eea;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pdf-footer {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 2px solid #e5e7eb;
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    
+    /* Force text selection on all elements */
+    #pdfContent * {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      cursor: text;
+    }
+    
+    /* Ensure text is rendered as text, not images */
+    #pdfContent {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background: #3b82f6;
+      transform: translateY(-1px);
+    }
+    
+    table input {
+      font-size: 13px;
+      padding: 8px;
+    }
   </style>
 </head>
 
-<body class="bg-gray-100 p-4">
-  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-4">
+<body class="bg-gray-50">
+  
+  <div class="gradient-bg py-8 px-4 mb-8 shadow-lg">
+    <div class="max-w-6xl mx-auto text-center">
+      <h1 class="text-4xl font-bold text-white mb-2">🚗 Car Shipping Bill of Lading</h1>
+      <p class="text-purple-100">Professional BOL Document Generator</p>
+    </div>
+  </div>
 
-    <h1 class="text-xl font-bold mb-4 text-center">Car Shipping - Bill of Lading Generator</h1>
+  <div class="max-w-6xl mx-auto px-4 pb-12">
+    
+    <form id="bolForm" class="space-y-6">
 
-    <form id="bolForm" class="space-y-3">
+      <!-- Company Information Section -->
+      <div class="section-card">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <span class="bg-purple-100 text-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">1</span>
+          Company Information
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <div>
+            <label class="form-label">Shipper</label>
+            <input type="text" name="shipper" placeholder="Shipper Company Name" 
+                   class="form-input w-full px-4 py-2 rounded-lg" required>
+            <textarea name="shipper_notes" placeholder="Address, Contact Info, Notes..." 
+                      rows="3" class="form-input w-full px-4 py-2 rounded-lg mt-2"></textarea>
+          </div>
 
-      <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">Consignee</label>
+            <input type="text" name="consignee" placeholder="Consignee Company Name" 
+                   class="form-input w-full px-4 py-2 rounded-lg" required>
+            <textarea name="consignee_notes" placeholder="Address, Contact Info, Notes..." 
+                      rows="3" class="form-input w-full px-4 py-2 rounded-lg mt-2"></textarea>
+          </div>
 
-        <div class="pdf-section">
-          <strong>Shipper</strong>
-          <input type="text" name="shipper" placeholder="Shipper Name" class="border p-1 rounded w-full mt-1" required>
-          <textarea name="shipper_notes" placeholder="Notes for Shipper" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
+          <div>
+            <label class="form-label">Notify Party</label>
+            <input type="text" name="notify" placeholder="Notify Party Name" 
+                   class="form-input w-full px-4 py-2 rounded-lg">
+            <textarea name="notify_notes" placeholder="Contact Information..." 
+                      rows="3" class="form-input w-full px-4 py-2 rounded-lg mt-2"></textarea>
+          </div>
+
+          <div>
+            <label class="form-label">Transit Country</label>
+            <select name="transit" class="form-input w-full px-4 py-2 rounded-lg">
+              <option value="">Select Transit Country</option>
+              <option value="Burkina Faso">🇧🇫 Burkina Faso</option>
+              <option value="Niger">🇳🇪 Niger</option>
+              <option value="Mali">🇲🇱 Mali</option>
+              <option value="Senegal">🇸🇳 Senegal</option>
+              <option value="Cameroon">🇨🇲 Cameroon</option>
+              <option value="Other">Other</option>
+            </select>
+            <textarea name="transit_notes" placeholder="Transit route details, customs info..." 
+                      rows="3" class="form-input w-full px-4 py-2 rounded-lg mt-2"></textarea>
+          </div>
+
         </div>
-
-        <div class="pdf-section">
-          <strong>Consignee</strong>
-          <input type="text" name="consignee" placeholder="Consignee Name" class="border p-1 rounded w-full mt-1" required>
-          <textarea name="consignee_notes" placeholder="Notes for Consignee" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
-        </div>
-
-        <div class="pdf-section">
-          <strong>Notify Party</strong>
-          <input type="text" name="notify" placeholder="Notify Party" class="border p-1 rounded w-full mt-1">
-          <textarea name="notify_notes" placeholder="Notes for Notify Party" rows="3" class="border p-1 rounded w-full mt-1"></textarea>
-        </div>
-
-        <!-- ⭐ UPDATED TRANSIT SECTION WITH OPTIONS -->
-        <div class="pdf-section">
-          <strong>Transit</strong>
-
-          <select name="transit" class="border p-1 rounded w-full mt-1">
-            <option value=""></option>
-            <option value="Burkina Faso">Burkina Faso</option>
-            <option value="Niger">Niger</option>
-            <option value="Other">Other</option>
-          </select>
-
-          <textarea name="transit_notes" placeholder="Transit Notes" rows="3"
-                    class="border p-1 rounded w-full mt-1"></textarea>
-        </div>
-        <!-- ⭐ END TRANSIT SECTION -->
-
-        <div class="pdf-section">
-          <strong>Final Destination</strong>
-          <input type="text" name="destination" placeholder="Final Destination" class="border p-1 rounded w-full mt-1">
-        </div>
-
-        <div class="pdf-section">
-          <strong>Container Size</strong>
-          <input type="text" name="container" placeholder="Container Size" class="border p-1 rounded w-full mt-1">
-        </div>
-
-        <div class="pdf-section">
-          <strong>Shipment Price</strong>
-          <input type="text" name="shipment_price" placeholder="Shipment Price" class="border p-1 rounded w-full mt-1">
-        </div>
-
-        <div class="pdf-section">
-          <strong>Shipping Line Company</strong>
-          <input type="text" name="shipping_line" placeholder="Shipping Line Company" class="border p-1 rounded w-full mt-1">
-        </div>
-
       </div>
 
-      <h2 class="text-sm font-semibold mt-4">Cars</h2>
+      <!-- Shipping Details Section -->
+      <div class="section-card">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <span class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">2</span>
+          Shipping Details
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          
+          <div>
+            <label class="form-label">BOL Number *</label>
+            <input type="text" name="bol_number" placeholder="BOL-2024-001" 
+                   class="form-input w-full px-4 py-2 rounded-lg" required>
+          </div>
 
-      <table id="carsTable" class="w-full text-sm table-auto">
-        <thead>
-          <tr>
-            <th>Make/Model</th>
-            <th>VIN</th>
-            <th>Price</th>
-            <th>Condition</th>
-            <th></th>
-          </tr>
-        </thead>
+          <div>
+            <label class="form-label">Container Number</label>
+            <input type="text" name="container_number" placeholder="MSCU1234567" 
+                   class="form-input w-full px-4 py-2 rounded-lg">
+          </div>
 
-        <tbody>
-          <tr>
-            <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
-            <td><input type="text" name="car_vin[]" class="border p-1 w-full"></td>
-            <td><input type="text" name="car_price[]" class="border p-1 w-full"></td>
-            <td><input type="text" name="car_condition[]" class="border p-1 w-full"></td>
-            <td><button type="button" onclick="removeRow(this)" class="text-red-600">Remove</button></td>
-          </tr>
-        </tbody>
-      </table>
+          <div>
+            <label class="form-label">Seal Number</label>
+            <input type="text" name="seal_number" placeholder="SL123456" 
+                   class="form-input w-full px-4 py-2 rounded-lg">
+          </div>
 
-      <button type="button" onclick="addRow()" class="bg-blue-600 text-white px-3 py-1 rounded mt-1">+ Add Car</button>
+          <div>
+            <label class="form-label">Final Destination</label>
+            <input type="text" name="destination" placeholder="Port or City" 
+                   class="form-input w-full px-4 py-2 rounded-lg">
+          </div>
 
-      <div class="text-center mt-4">
-        <button type="submit" class="bg-green-600 text-white px-4 py-1 rounded">Generate BOL PDF</button>
+          <div>
+            <label class="form-label">Container Size</label>
+            <select name="container" class="form-input w-full px-4 py-2 rounded-lg">
+              <option value="">Select Size</option>
+              <option value="20ft">20ft Container</option>
+              <option value="40ft">40ft Container</option>
+              <option value="40ft HC">40ft High Cube</option>
+              <option value="45ft">45ft Container</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">Shipment Price</label>
+            <input type="text" name="shipment_price" placeholder="$0.00" 
+                   class="form-input w-full px-4 py-2 rounded-lg">
+          </div>
+
+          <div>
+            <label class="form-label">Shipping Line</label>
+            <input type="text" name="shipping_line" placeholder="Company Name" 
+                   class="form-input w-full px-4 py-2 rounded-lg">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Cars Section -->
+      <div class="section-card">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <span class="bg-green-100 text-green-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">3</span>
+          Vehicle Details
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table id="carsTable" class="w-full">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Make/Model</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">VIN Number</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Condition</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Notes</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-gray-200">
+                <td class="px-2 py-2"><input type="text" name="car_model[]" placeholder="e.g., Toyota Camry 2020" class="form-input w-full px-3 py-2 rounded-lg"></td>
+                <td class="px-2 py-2"><input type="text" name="car_vin[]" placeholder="17-digit VIN" class="form-input w-full px-3 py-2 rounded-lg"></td>
+                <td class="px-2 py-2"><input type="text" name="car_price[]" placeholder="$0.00" class="form-input w-full px-3 py-2 rounded-lg"></td>
+                <td class="px-2 py-2">
+                  <select name="car_condition[]" class="form-input w-full px-3 py-2 rounded-lg">
+                    <option value="New">New</option>
+                    <option value="Used">Used</option>
+                    <option value="Damaged">Damaged</option>
+                  </select>
+                </td>
+                <td class="px-2 py-2"><input type="text" name="car_notes[]" placeholder="Additional notes..." class="form-input w-full px-3 py-2 rounded-lg"></td>
+                <td class="px-2 py-2 text-center">
+                  <button type="button" onclick="removeRow(this)" class="text-red-600 hover:text-red-800 font-semibold text-sm">❌ Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button type="button" onclick="addRow()" class="btn-secondary bg-blue-500 text-white px-6 py-2 rounded-lg mt-4 font-semibold">
+          + Add Vehicle
+        </button>
+      </div>
+
+      <!-- Generate Button -->
+      <div class="text-center pt-4">
+        <button type="submit" class="btn-primary text-white px-12 py-4 rounded-lg text-lg font-bold shadow-lg">
+          📄 Generate BOL PDF
+        </button>
       </div>
 
     </form>
-
-    <div id="pdfContent" class="hidden"></div>
 
   </div>
 
@@ -140,47 +418,270 @@
     function addRow() {
       const table = document.getElementById('carsTable').getElementsByTagName('tbody')[0];
       const newRow = table.insertRow();
+      newRow.className = 'border-b border-gray-200';
       newRow.innerHTML = `
-        <td><input type="text" name="car_model[]" class="border p-1 w-full"></td>
-        <td><input type="text" name="car_vin[]" class="border p-1 w-full"></td>
-        <td><input type="text" name="car_price[]" class="border p-1 w-full"></td>
-        <td><input type="text" name="car_condition[]" class="border p-1 w-full"></td>
-        <td><button type="button" onclick="removeRow(this)" class="text-red-600">Remove</button></td>
+        <td class="px-2 py-2"><input type="text" name="car_model[]" placeholder="e.g., Toyota Camry 2020" class="form-input w-full px-3 py-2 rounded-lg"></td>
+        <td class="px-2 py-2"><input type="text" name="car_vin[]" placeholder="17-digit VIN" class="form-input w-full px-3 py-2 rounded-lg"></td>
+        <td class="px-2 py-2"><input type="text" name="car_price[]" placeholder="$0.00" class="form-input w-full px-3 py-2 rounded-lg"></td>
+        <td class="px-2 py-2">
+          <select name="car_condition[]" class="form-input w-full px-3 py-2 rounded-lg">
+            <option value="New">New</option>
+            <option value="Used">Used</option>
+            <option value="Damaged">Damaged</option>
+          </select>
+        </td>
+        <td class="px-2 py-2"><input type="text" name="car_notes[]" placeholder="Additional notes..." class="form-input w-full px-3 py-2 rounded-lg"></td>
+        <td class="px-2 py-2 text-center">
+          <button type="button" onclick="removeRow(this)" class="text-red-600 hover:text-red-800 font-semibold text-sm">❌ Remove</button>
+        </td>
       `;
     }
 
     function removeRow(btn) {
-      btn.closest('tr').remove();
+      const tbody = document.getElementById('carsTable').getElementsByTagName('tbody')[0];
+      if (tbody.rows.length > 1) {
+        btn.closest('tr').remove();
+      } else {
+        alert('At least one vehicle must remain in the BOL.');
+      }
     }
 
     document.getElementById('bolForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
-      const clone = e.target.cloneNode(true);
-
-      clone.querySelectorAll('input, textarea, select').forEach(el => {
-        const value = el.value || '';
-        const div = document.createElement('div');
-        div.textContent = value;
-        div.className = "mt-1 preserve-lines";
-        el.replaceWith(div);
+      // Collect form data
+      const formData = new FormData(e.target);
+      const bolNumber = formData.get('bol_number') || 'BOL-' + new Date().getTime();
+      
+      // Create PDF with jsPDF (generates real selectable text)
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      let yPos = 15;
+      const leftMargin = 15;
+      const rightMargin = 195;
+      const pageWidth = 210;
+      const usableWidth = rightMargin - leftMargin;
+      
+      // Header with gradient effect (using rectangles)
+      doc.setFillColor(102, 126, 234);
+      doc.rect(leftMargin, yPos, usableWidth, 25, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BILL OF LADING', leftMargin + 5, yPos + 8);
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Car Shipping Document', leftMargin + 5, yPos + 14);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, leftMargin + 5, yPos + 18);
+      
+      // BOL Number badge
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(rightMargin - 35, yPos + 3, 35, 12, 2, 2, 'F');
+      doc.setTextColor(102, 126, 234);
+      doc.setFontSize(7);
+      doc.text('BOL NUMBER', rightMargin - 32, yPos + 7);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(bolNumber, rightMargin - 32, yPos + 12);
+      
+      yPos += 30;
+      
+      // Section banner helper function
+      function addSectionBanner(text, y) {
+        doc.setFillColor(224, 231, 255);
+        doc.roundedRect(leftMargin, y, usableWidth, 8, 2, 2, 'F');
+        doc.setDrawColor(102, 126, 234);
+        doc.setLineWidth(1);
+        doc.line(leftMargin, y, leftMargin, y + 8);
+        doc.setTextColor(31, 41, 55);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(text, leftMargin + 3, y + 5.5);
+        return y + 12;
+      }
+      
+      // Section box helper function
+      function addSectionBox(title, content, x, y, width, height) {
+        doc.setDrawColor(229, 231, 235);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(x, y, width, height, 2, 2, 'S');
+        
+        doc.setFillColor(249, 250, 251);
+        doc.roundedRect(x, y, width, height, 2, 2, 'F');
+        doc.roundedRect(x, y, width, height, 2, 2, 'S');
+        
+        doc.setTextColor(102, 126, 234);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title.toUpperCase(), x + 3, y + 4);
+        
+        doc.setTextColor(55, 65, 81);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        const mainText = content.split('\n')[0] || 'N/A';
+        doc.text(mainText.substring(0, 35), x + 3, y + 9);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        const notes = content.split('\n').slice(1).join('\n') || '';
+        if (notes) {
+          const splitNotes = doc.splitTextToSize(notes, width - 6);
+          doc.text(splitNotes.slice(0, 3), x + 3, y + 13);
+        }
+      }
+      
+      // COMPANY INFORMATION
+      yPos = addSectionBanner('COMPANY INFORMATION', yPos);
+      
+      const boxWidth = (usableWidth - 6) / 2;
+      const boxHeight = 22;
+      
+      addSectionBox('Shipper', 
+        `${formData.get('shipper') || 'N/A'}\n${formData.get('shipper_notes') || ''}`,
+        leftMargin, yPos, boxWidth, boxHeight);
+      
+      addSectionBox('Consignee',
+        `${formData.get('consignee') || 'N/A'}\n${formData.get('consignee_notes') || ''}`,
+        leftMargin + boxWidth + 3, yPos, boxWidth, boxHeight);
+      
+      yPos += boxHeight + 3;
+      
+      addSectionBox('Notify Party',
+        `${formData.get('notify') || 'N/A'}\n${formData.get('notify_notes') || ''}`,
+        leftMargin, yPos, boxWidth, boxHeight);
+      
+      addSectionBox('Transit Country',
+        `${formData.get('transit') || 'N/A'}\n${formData.get('transit_notes') || ''}`,
+        leftMargin + boxWidth + 3, yPos, boxWidth, boxHeight);
+      
+      yPos += boxHeight + 6;
+      
+      // SHIPPING DETAILS
+      yPos = addSectionBanner('SHIPPING DETAILS', yPos);
+      
+      const smallBoxWidth = (usableWidth - 12) / 3;
+      const smallBoxHeight = 15;
+      
+      addSectionBox('Container Number', formData.get('container_number') || 'N/A',
+        leftMargin, yPos, smallBoxWidth, smallBoxHeight);
+      addSectionBox('Seal Number', formData.get('seal_number') || 'N/A',
+        leftMargin + smallBoxWidth + 3, yPos, smallBoxWidth, smallBoxHeight);
+      addSectionBox('Container Size', formData.get('container') || 'N/A',
+        leftMargin + (smallBoxWidth + 3) * 2, yPos, smallBoxWidth, smallBoxHeight);
+      
+      yPos += smallBoxHeight + 3;
+      
+      addSectionBox('Final Destination', formData.get('destination') || 'N/A',
+        leftMargin, yPos, smallBoxWidth, smallBoxHeight);
+      addSectionBox('Shipment Price', formData.get('shipment_price') || 'N/A',
+        leftMargin + smallBoxWidth + 3, yPos, smallBoxWidth, smallBoxHeight);
+      addSectionBox('Shipping Line', formData.get('shipping_line') || 'N/A',
+        leftMargin + (smallBoxWidth + 3) * 2, yPos, smallBoxWidth, smallBoxHeight);
+      
+      yPos += smallBoxHeight + 6;
+      
+      // VEHICLE DETAILS TABLE
+      yPos = addSectionBanner('VEHICLE DETAILS', yPos);
+      
+      const models = formData.getAll('car_model[]');
+      const vins = formData.getAll('car_vin[]');
+      const prices = formData.getAll('car_price[]');
+      const conditions = formData.getAll('car_condition[]');
+      const notes = formData.getAll('car_notes[]');
+      
+      const tableData = [];
+      for (let i = 0; i < models.length; i++) {
+        if (models[i] || vins[i] || prices[i]) {
+          tableData.push([
+            models[i] || 'N/A',
+            vins[i] || 'N/A',
+            prices[i] || 'N/A',
+            conditions[i] || 'N/A',
+            notes[i] || '-'
+          ]);
+        }
+      }
+      
+      if (tableData.length === 0) {
+        tableData.push(['No vehicles listed', '', '', '', '']);
+      }
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Make/Model', 'VIN Number', 'Price', 'Condition', 'Notes']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [102, 126, 234],
+          textColor: 255,
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'left'
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [55, 65, 81],
+          cellPadding: 3
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        margin: { left: leftMargin, right: 15 },
+        tableWidth: usableWidth,
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 'auto' }
+        }
       });
-
-      clone.querySelectorAll('button').forEach(btn => btn.remove());
-
-      const pdfDiv = document.getElementById('pdfContent');
-      pdfDiv.innerHTML = '';
-      pdfDiv.appendChild(clone);
-      pdfDiv.classList.remove('hidden');
-
-      html2pdf().from(pdfDiv).set({
-        margin: 8,
-        filename: 'BOL.pdf',
-        html2canvas: { scale: 2, scrollY: 0 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid', 'css', 'legacy'] }
-      }).save();
+      
+      // Footer
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFillColor(249, 250, 251);
+      doc.roundedRect(leftMargin, finalY, usableWidth, 18, 2, 2, 'F');
+      
+      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text('This is an electronically generated Bill of Lading document', pageWidth / 2, finalY + 5, { align: 'center' });
+      
+      doc.setFontSize(6);
+      doc.setTextColor(156, 163, 175);
+      doc.text(`Generated: ${new Date().toLocaleString()} | Document ID: ${bolNumber}`, pageWidth / 2, finalY + 9, { align: 'center' });
+      doc.text('For questions or concerns, please contact the shipper or consignee listed above', pageWidth / 2, finalY + 13, { align: 'center' });
+      
+      // Save PDF
+      doc.save(`${bolNumber}.pdf`);
     });
+
+    function generateCarRows(formData) {
+      const models = formData.getAll('car_model[]');
+      const vins = formData.getAll('car_vin[]');
+      const prices = formData.getAll('car_price[]');
+      const conditions = formData.getAll('car_condition[]');
+      const notes = formData.getAll('car_notes[]');
+
+      let rows = '';
+      for (let i = 0; i < models.length; i++) {
+        if (models[i] || vins[i] || prices[i]) {
+          rows += `
+            <tr>
+              <td style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${models[i] || 'N/A'}</td>
+              <td style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${vins[i] || 'N/A'}</td>
+              <td style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${prices[i] || 'N/A'}</td>
+              <td style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${conditions[i] || 'N/A'}</td>
+              <td style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${notes[i] || '-'}</td>
+            </tr>
+          `;
+        }
+      }
+      return rows || '<tr><td colspan="5" style="text-align: center; user-select: text;">No vehicles listed</td></tr>';
+    }
   </script>
 
 </body>
