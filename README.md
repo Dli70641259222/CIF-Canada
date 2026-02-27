@@ -1,2 +1,0 @@
-# CIF-Canada
-CIF-Canada
